@@ -5,13 +5,13 @@ import (
 )
 
 type Engine struct {
-  mt  Memtable,
+  mt  Memtable
   ss
 }
 
 type Memtable interface {
   Put(key, value string) error
-  Get(key string) string, error
+  Get(key string) (string, error)
   Flush() error
 }
 
