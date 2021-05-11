@@ -1,5 +1,7 @@
 package rbtree
 
+import "errors"
+
 var (
 	black colour = false
 	red   colour = true
@@ -7,10 +9,9 @@ var (
 
 type colour bool
 
-type RedBlackTree struct {
-	root *Node
-}
+// NODE ---
 
+// ver 1 only accepts string values
 type Node struct {
 	key    string
 	value  string
@@ -20,7 +21,43 @@ type Node struct {
 	right  *Node
 }
 
+func (node *Node) Get(key string) (string, error) {
+	if node.key == key {
+		return node.value, nil
+	}
+	if node == nil {
+		return "", errors.New("NOT EXIST")
+	}
+
+	if node.key < key {
+		return node.left.Get(key)
+	}
+	return node.right.Get(key)
+}
+
+// NODE ---
+
+// RBTREE ---
+
+type RedBlackTree struct {
+	root *Node
+}
+
+func (rbtree *RedBlackTree) Get(key string) (string, error) {
+	node := rbtree.root
+	return node.Get(key)
+}
+
 func (rbtree *RedBlackTree) Insert(key string, value string) {
+	node := &Node{
+		key:    key,
+		value:  value,
+		colour: red,
+		parent: nil,
+		left:   nil,
+		right:  nil,
+	}
+
 	x := rbtree.root
 	var y *Node = nil
 
@@ -33,24 +70,29 @@ func (rbtree *RedBlackTree) Insert(key string, value string) {
 		}
 	}
 
-	newNode := &Node{
-		key:    key,
-		value:  value,
-		colour: red,
-		parent: y,
-		left:   nil,
-		right:  nil,
-	}
+	node.parent = y
 
 	if y == nil {
-		rbtree.root = newNode
+		rbtree.root = node
 	} else if key < y.key {
-		y.left = newNode
-	} else {
-		y.right = newNode
-	} // if same -> should follow a different flow, maybe overlap
+		y.left = node
+	} else if key > y.key {
+		y.right = node
+	} else { // if key == y.key, overwrite the value. + Tombstone will be a special string
+		y.value = value
+		return
+	}
 
-	rbtree.insertFix(newNode)
+	if node.parent == nil {
+		node.colour = black
+		return
+	}
+
+	if node.parent.parent == nil {
+		return
+	}
+
+	rbtree.insertFix(node)
 }
 
 func (rbtree *RedBlackTree) insertFix(node *Node) {
@@ -64,11 +106,11 @@ func (rbtree *RedBlackTree) insertFix(node *Node) {
 				node = node.parent.parent
 			} else if node == node.parent.right {
 				node = node.parent
-				leftRotate(rbtree, node)
+				rbtree.leftRotate(node)
 			}
 			node.parent.colour = black
 			node.parent.parent.colour = red
-			rightRotate(rbtree, node.parent.parent)
+			rbtree.rightRotate(node.parent.parent)
 		} else if node.parent.parent != nil && node.parent == node.parent.parent.right {
 			uncle := node.parent.parent.left
 			if uncle.colour == red {
@@ -78,20 +120,50 @@ func (rbtree *RedBlackTree) insertFix(node *Node) {
 				node = node.parent.parent
 			} else if node == node.parent.left {
 				node = node.parent
-				leftRotate(rbtree, node)
+				rbtree.rightRotate(node)
 			}
 			node.parent.colour = black
 			node.parent.parent.colour = red
-			rightRotate(rbtree, node.parent.parent)
+			rbtree.leftRotate(node.parent.parent)
 		}
 		rbtree.root.colour = black
 	}
 }
 
-func leftRotate(rbtree *RedBlackTree, node *Node) {
-
+func (rbtree *RedBlackTree) leftRotate(node *Node) {
+	y := node.right
+	node.right = y.left
+	if y.left != nil {
+		y.left.parent = node
+	}
+	y.parent = node.parent
+	if node.parent == nil {
+		rbtree.root = y
+	} else if node == node.parent.left {
+		node.parent.left = y
+	} else {
+		node.parent.right = y
+	}
+	y.left = node
+	node.parent = y
 }
 
-func rightRotate(rbtree *RedBlackTree, node *Node) {
-
+func (rbtree *RedBlackTree) rightRotate(node *Node) {
+	y := node.left
+	node.left = y.right
+	if y.right != nil {
+		y.right.parent = node
+	}
+	y.parent = node.parent
+	if node.parent == nil {
+		rbtree.root = y
+	} else if node == node.parent.right {
+		node.parent.right = y
+	} else {
+		node.parent.left = y
+	}
+	y.right = node
+	node.parent = y
 }
+
+// RBTREE ---

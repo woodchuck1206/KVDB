@@ -1,11 +1,11 @@
 package memtable
 
 import (
-  // rbtree "github.com/woodchuckchoi/KVDB/src/engine/memtable/rbtree"
+  
 )
 
 type Memtable struct {
-  // redBlackTree rbtree.RBTree
+  // redBlackTree Tree
 }
 
 type Tree interface {
