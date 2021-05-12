@@ -1,6 +1,10 @@
 package rbtree
 
-import "errors"
+import (
+	"errors"
+
+	myVar "github.com/woodchuckchoi/KVDB/src/engine/vars"
+)
 
 var (
 	black colour = false
@@ -57,10 +61,8 @@ func (rbtree *RedBlackTree) Insert(key string, value string) {
 		left:   nil,
 		right:  nil,
 	}
-
 	x := rbtree.root
 	var y *Node = nil
-
 	for x != nil {
 		y = x
 		if key < x.key {
@@ -69,9 +71,7 @@ func (rbtree *RedBlackTree) Insert(key string, value string) {
 			x = x.right
 		}
 	}
-
 	node.parent = y
-
 	if y == nil {
 		rbtree.root = node
 	} else if key < y.key {
@@ -82,43 +82,40 @@ func (rbtree *RedBlackTree) Insert(key string, value string) {
 		y.value = value
 		return
 	}
-
 	if node.parent == nil {
 		node.colour = black
 		return
 	}
-
 	if node.parent.parent == nil {
 		return
 	}
-
 	rbtree.insertFix(node)
 }
 
 func (rbtree *RedBlackTree) insertFix(node *Node) {
 	for node.parent != nil && node.parent.colour == red {
-		if node.parent.parent != nil && node.parent == node.parent.parent.left {
+		if node.parent.parent != nil && node.parent.parent.left != nil && node.parent == node.parent.parent.left {
 			uncle := node.parent.parent.right
-			if uncle.colour == red {
+			if uncle != nil && uncle.colour == red {
 				node.parent.colour = black
 				uncle.colour = black
 				node.parent.parent.colour = red
 				node = node.parent.parent
-			} else if node == node.parent.right {
+			} else if node.parent.right != nil && node == node.parent.right {
 				node = node.parent
 				rbtree.leftRotate(node)
 			}
 			node.parent.colour = black
 			node.parent.parent.colour = red
 			rbtree.rightRotate(node.parent.parent)
-		} else if node.parent.parent != nil && node.parent == node.parent.parent.right {
+		} else if node.parent.parent != nil && node.parent.parent.right != nil && node.parent == node.parent.parent.right {
 			uncle := node.parent.parent.left
-			if uncle.colour == red {
+			if uncle != nil && uncle.colour == red {
 				node.parent.colour = black
 				uncle.colour = black
 				node.parent.parent.colour = red
 				node = node.parent.parent
-			} else if node == node.parent.left {
+			} else if node.parent.left != nil && node == node.parent.left {
 				node = node.parent
 				rbtree.rightRotate(node)
 			}
@@ -164,6 +161,21 @@ func (rbtree *RedBlackTree) rightRotate(node *Node) {
 	}
 	y.right = node
 	node.parent = y
+}
+
+func (rbtree *RedBlackTree) Flush() []myVar.KeyValue {
+	ret := []myVar.KeyValue{}
+	flushHelper(rbtree.root, &ret)
+	return ret
+}
+
+func flushHelper(node *Node, out *[]myVar.KeyValue) {
+	if node == nil {
+		return
+	}
+	flushHelper(node.left, out)
+	*out = append(*out, myVar.KeyValue{Key: node.key, Value: node.value})
+	flushHelper(node.right, out)
 }
 
 // RBTREE ---
