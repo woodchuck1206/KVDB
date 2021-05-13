@@ -39,6 +39,30 @@ func (node *Node) Get(key string) (string, error) {
 	return node.right.Get(key)
 }
 
+func nodeColour(node *Node) colour {
+	if node == nil {
+		return black
+	}
+	return node.colour
+}
+
+func nodeUncle(node *Node) *Node {
+	if node == nil || node.parent == nil || node.parent.parent == nil {
+		return nil
+	}
+	if node.parent == node.parent.parent.left {
+		return node.parent.parent.right
+	}
+	return node.parent.parent.left
+}
+
+func nodeGrandparent(node *Node) *Node {
+	if node != nil && node.parent != nil {
+		return node.parent.parent
+	}
+	return nil
+}
+
 // NODE ---
 
 // RBTREE ---
@@ -53,6 +77,7 @@ func (rbtree *RedBlackTree) Get(key string) (string, error) {
 }
 
 func (rbtree *RedBlackTree) Insert(key string, value string) {
+
 	node := &Node{
 		key:    key,
 		value:  value,
@@ -61,6 +86,7 @@ func (rbtree *RedBlackTree) Insert(key string, value string) {
 		left:   nil,
 		right:  nil,
 	}
+
 	x := rbtree.root
 	var y *Node = nil
 	for x != nil {
@@ -71,6 +97,7 @@ func (rbtree *RedBlackTree) Insert(key string, value string) {
 			x = x.right
 		}
 	}
+
 	node.parent = y
 	if y == nil {
 		rbtree.root = node
@@ -89,41 +116,58 @@ func (rbtree *RedBlackTree) Insert(key string, value string) {
 	if node.parent.parent == nil {
 		return
 	}
-	rbtree.insertFix(node)
+	rbtree.insertFix1(node)
 }
 
-func (rbtree *RedBlackTree) insertFix(node *Node) {
-	for node.parent != nil && node.parent.colour == red {
-		if node.parent.parent != nil && node.parent.parent.left != nil && node.parent == node.parent.parent.left {
-			uncle := node.parent.parent.right
-			if uncle != nil && uncle.colour == red {
-				node.parent.colour = black
-				uncle.colour = black
-				node.parent.parent.colour = red
-				node = node.parent.parent
-			} else if node.parent.right != nil && node == node.parent.right {
-				node = node.parent
-				rbtree.leftRotate(node)
-			}
-			node.parent.colour = black
-			node.parent.parent.colour = red
-			rbtree.rightRotate(node.parent.parent)
-		} else if node.parent.parent != nil && node.parent.parent.right != nil && node.parent == node.parent.parent.right {
-			uncle := node.parent.parent.left
-			if uncle != nil && uncle.colour == red {
-				node.parent.colour = black
-				uncle.colour = black
-				node.parent.parent.colour = red
-				node = node.parent.parent
-			} else if node.parent.left != nil && node == node.parent.left {
-				node = node.parent
-				rbtree.rightRotate(node)
-			}
-			node.parent.colour = black
-			node.parent.parent.colour = red
-			rbtree.leftRotate(node.parent.parent)
-		}
-		rbtree.root.colour = black
+func (rbtree *RedBlackTree) insertFix1(node *Node) {
+	if node.parent == nil {
+		node.colour = black
+	} else {
+		rbtree.insertFix2(node)
+	}
+}
+
+func (rbtree *RedBlackTree) insertFix2(node *Node) {
+	if nodeColour(node.parent) == black {
+		return
+	}
+	rbtree.insertFix3(node)
+}
+
+//////////////////////////////////
+
+func (rbtree *RedBlackTree) insertFix3(node *Node) {
+	uncle := nodeUncle(node)
+	if nodeColour(uncle) == red {
+		node.parent.colour = black
+		uncle.colour = black
+		nodeGrandparent(node).colour = red
+		rbtree.insertFix1(nodeGrandparent(node))
+	} else {
+		rbtree.insertFix4(node)
+	}
+}
+
+func (rbtree *RedBlackTree) insertFix4(node *Node) {
+	grandparent := nodeGrandparent(node)
+	if node == node.parent.right && node.parent == grandparent.left {
+		rbtree.leftRotate(node.parent)
+		node = node.left
+	} else if node == node.parent.left && node.parent == grandparent.right {
+		rbtree.rightRotate(node.parent)
+		node = node.right
+	}
+	rbtree.insertFix5(node)
+}
+
+func (rbtree *RedBlackTree) insertFix5(node *Node) {
+	node.parent.colour = black
+	grandparent := nodeGrandparent(node)
+	grandparent.colour = red
+	if node == node.parent.left && node.parent == grandparent.left {
+		rbtree.rightRotate(grandparent)
+	} else if node == node.parent.right && node.parent == grandparent.right {
+		rbtree.leftRotate(grandparent)
 	}
 }
 

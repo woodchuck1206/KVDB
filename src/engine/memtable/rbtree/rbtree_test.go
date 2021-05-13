@@ -1,8 +1,11 @@
 package rbtree
 
 import (
-	"fmt"
+	"reflect"
+	"sort"
 	"testing"
+
+	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
 func TestRedBlackTree(t *testing.T) {
@@ -13,18 +16,27 @@ func TestRedBlackTree(t *testing.T) {
 		value string
 	}
 
-	testInsert := []toInsert{
-		{key: "ab", value: "2r3"},
-		{key: "asdf", value: "adg"},
-		{key: "fwe", value: "zb"},
-		{key: "qewf", value: "asGD"},
-		{key: "abd", value: "WYHR"},
-		{key: "afng", value: "sfh"},
+	testInsert := []vars.KeyValue{
+		{Key: "ab", Value: "2r3"},
+		{Key: "asdf", Value: "adg"},
+		{Key: "fwe", Value: "zb"},
+		{Key: "qewf", Value: "asGD"},
+		{Key: "abd", Value: "WYHR"},
+		{Key: "afng", Value: "sfh"},
 	}
 
 	for _, val := range testInsert {
-		rbtree.Insert(val.key, val.value)
+		rbtree.Insert(val.Key, val.Value)
 	}
 
-	fmt.Println(rbtree.Flush())
+	sort.Slice(testInsert, func(i, j int) bool {
+		if testInsert[i].Key < testInsert[j].Key {
+			return true
+		}
+		return false
+	})
+
+	if !reflect.DeepEqual(rbtree.Flush(), testInsert) {
+		panic("RBTREE ORDER ERROR")
+	}
 }
