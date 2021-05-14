@@ -83,11 +83,14 @@ func (rbtree *RedBlackTree) Get(key string) (string, error) {
 }
 
 func (rbtree *RedBlackTree) Put(key string, value string) error {
-	defer func() {
+	defer func() error {
+		var ret error = nil
 		if err := recover(); err != nil {
-			return errors.New("PUT FAIL ERROR") // this should move too
+			ret = errors.New("PUT FAIL ERROR") // this should move too
 		}
+		return ret
 	}()
+
 	node := &Node{
 		key:    key,
 		value:  value,
@@ -117,14 +120,14 @@ func (rbtree *RedBlackTree) Put(key string, value string) error {
 		y.right = node
 	} else { // if key == y.key, overwrite the value. + Tombstone will be a special string
 		y.value = value
-		return
+		return nil
 	}
 	if node.parent == nil {
 		node.colour = black
-		return
+		return nil
 	}
 	if node.parent.parent == nil {
-		return
+		return nil
 	}
 	rbtree.insertFix1(node)
 	return nil

@@ -1,27 +1,35 @@
 package engine
 
 import (
+	"github.com/woodchuckchoi/KVDB/src/engine/memtable"
+	memtable "github.com/woodchuckchoi/KVDB/src/engine/memtable"
 
 	// sstable "github.com/woodchuckchoi/KVDB/src/engine/sstable"
-	// memtable "github.com/woodchuckchoi/KVDB/src/engine/memtable"
 	myVar "github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
-const r int = 3
+var r int = 3
 
 type Engine struct {
 	memTable Memtable
 	ssTable  SStable
 }
 
+func NewEngine() *Engine {
+	return &Engine {
+		memTable: memtable.NewMemtable(),
+		ssTable:  sstable.,
+	}
+}
+
 type Memtable interface {
-	Put(key, value string) error
-	Get(key string) (string, error)
-	Flush() []myVar.KeyValue
+	Put(string, string) error
+	Get(string) (string, error)
 }
 
 type SStable interface {
-	Get(key string) (string, error)
+	Get(string) (string, error)
+	Merge([]myVar.KeyValue)
 }
 
 func ImportTest() string {
