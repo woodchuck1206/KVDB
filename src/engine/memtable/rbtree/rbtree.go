@@ -30,7 +30,7 @@ func (node *Node) Get(key string) (string, error) {
 		return node.value, nil
 	}
 	if node == nil {
-		return "", errors.New("NOT EXIST")
+		return "", errors.New("NOT EXIST") // should move this diclaration somewhere else
 	}
 
 	if node.key < key {
@@ -71,13 +71,23 @@ type RedBlackTree struct {
 	root *Node
 }
 
+func NewTree() *RedBlackTree {
+	return &RedBlackTree{
+		root: nil,
+	}
+}
+
 func (rbtree *RedBlackTree) Get(key string) (string, error) {
 	node := rbtree.root
 	return node.Get(key)
 }
 
-func (rbtree *RedBlackTree) Insert(key string, value string) {
-
+func (rbtree *RedBlackTree) Put(key string, value string) error {
+	defer func() {
+		if err := recover(); err != nil {
+			return errors.New("PUT FAIL ERROR") // this should move too
+		}
+	}()
 	node := &Node{
 		key:    key,
 		value:  value,
@@ -117,6 +127,7 @@ func (rbtree *RedBlackTree) Insert(key string, value string) {
 		return
 	}
 	rbtree.insertFix1(node)
+	return nil
 }
 
 func (rbtree *RedBlackTree) insertFix1(node *Node) {
@@ -133,8 +144,6 @@ func (rbtree *RedBlackTree) insertFix2(node *Node) {
 	}
 	rbtree.insertFix3(node)
 }
-
-//////////////////////////////////
 
 func (rbtree *RedBlackTree) insertFix3(node *Node) {
 	uncle := nodeUncle(node)

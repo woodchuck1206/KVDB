@@ -1,16 +1,23 @@
 package engine
 
-// memtable "github.com/woodchuckchoi/KVDB/src/engine/memtable"
+import (
+
+	// sstable "github.com/woodchuckchoi/KVDB/src/engine/sstable"
+	// memtable "github.com/woodchuckchoi/KVDB/src/engine/memtable"
+	myVar "github.com/woodchuckchoi/KVDB/src/engine/vars"
+)
+
+const r int = 3
 
 type Engine struct {
-	mt Memtable
-	// ss
+	memTable Memtable
+	ssTable  SStable
 }
 
 type Memtable interface {
 	Put(key, value string) error
 	Get(key string) (string, error)
-	Flush() error
+	Flush() []myVar.KeyValue
 }
 
 type SStable interface {

@@ -26,7 +26,7 @@ func TestRedBlackTree(t *testing.T) {
 	}
 
 	for _, val := range testInsert {
-		rbtree.Insert(val.Key, val.Value)
+		rbtree.Put(val.Key, val.Value)
 	}
 
 	sort.Slice(testInsert, func(i, j int) bool {
