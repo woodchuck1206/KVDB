@@ -1,10 +1,8 @@
 package memtable
 
 import (
-	"errors"
-
 	rbtree "github.com/woodchuckchoi/KVDB/src/engine/memtable/rbtree"
-	myVar "github.com/woodchuckchoi/KVDB/src/engine/vars"
+	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
 type Memtable struct {
@@ -15,13 +13,13 @@ type Memtable struct {
 }
 
 type target interface {
-	Merge([]myVar.KeyValue) error
+	Merge([]vars.KeyValue) error
 }
 
 type Tree interface {
 	Get(key string) (string, error)
 	Put(key, value string) error
-	Flush() []myVar.KeyValue
+	Flush() []vars.KeyValue
 }
 
 func NewMemtable(t target) *Memtable {
@@ -33,13 +31,14 @@ func NewMemtable(t target) *Memtable {
 }
 
 func (memtable *Memtable) Put(key, value string) error {
-	defer func() error {
-		var ret error = nil
-		if err := recover(); err != nil {
-			ret = errors.New("PUT FAILED")
-		}
-		return ret
-	}()
+	// defer func() error {
+	// 	var ret error = nil
+	// 	if err := recover(); err != nil {
+	// 		ret = vars.PUT_FAIL_ERROR
+	// 		ret = errors.New("PUT FAILED")
+	// 	}
+	// 	return ret
+	// }()
 
 	if err := memtable.tree.Put(key, value); err != nil {
 		return err
@@ -55,7 +54,7 @@ func (memtable *Memtable) Get(key string) (string, error) {
 	return memtable.tree.Get(key)
 }
 
-func (memtable *Memtable) flush() []myVar.KeyValue {
+func (memtable *Memtable) flush() []vars.KeyValue {
 	toFlush := memtable.tree.Flush()
 	memtable.tree = rbtree.NewTree()
 	return toFlush

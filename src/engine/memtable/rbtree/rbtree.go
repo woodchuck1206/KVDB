@@ -1,9 +1,7 @@
 package rbtree
 
 import (
-	"errors"
-
-	myVar "github.com/woodchuckchoi/KVDB/src/engine/vars"
+	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
 var (
@@ -30,7 +28,7 @@ func (node *Node) Get(key string) (string, error) {
 		return node.value, nil
 	}
 	if node == nil {
-		return "", errors.New("NOT EXIST") // should move this diclaration somewhere else
+		return "", vars.GET_FAIL_ERROR
 	}
 
 	if node.key < key {
@@ -86,7 +84,7 @@ func (rbtree *RedBlackTree) Put(key string, value string) error {
 	defer func() error {
 		var ret error = nil
 		if err := recover(); err != nil {
-			ret = errors.New("PUT FAIL ERROR") // this should move too
+			ret = vars.PUT_FAIL_ERROR
 		}
 		return ret
 	}()
@@ -219,18 +217,18 @@ func (rbtree *RedBlackTree) rightRotate(node *Node) {
 	node.parent = y
 }
 
-func (rbtree *RedBlackTree) Flush() []myVar.KeyValue {
-	ret := []myVar.KeyValue{}
+func (rbtree *RedBlackTree) Flush() []vars.KeyValue {
+	ret := []vars.KeyValue{}
 	flushHelper(rbtree.root, &ret)
 	return ret
 }
 
-func flushHelper(node *Node, out *[]myVar.KeyValue) {
+func flushHelper(node *Node, out *[]vars.KeyValue) {
 	if node == nil {
 		return
 	}
 	flushHelper(node.left, out)
-	*out = append(*out, myVar.KeyValue{Key: node.key, Value: node.value})
+	*out = append(*out, vars.KeyValue{Key: node.key, Value: node.value})
 	flushHelper(node.right, out)
 }
 
