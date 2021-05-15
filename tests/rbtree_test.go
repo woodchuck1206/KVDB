@@ -1,15 +1,16 @@
-package rbtree
+package tests
 
 import (
 	"reflect"
 	"sort"
 	"testing"
 
+	"github.com/woodchuckchoi/KVDB/src/engine/memtable/rbtree"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
 func TestRedBlackTree(t *testing.T) {
-	rbtree := &RedBlackTree{}
+	rbtree := rbtree.NewTree()
 
 	type toInsert struct {
 		key   string
