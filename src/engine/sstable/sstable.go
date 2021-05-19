@@ -3,19 +3,21 @@ package sstable
 import (
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/woodchuckchoi/KVDB/src/engine/util"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
 var (
-	BASE_DIR		= "/tmp/gokvdb"
-	INDEX_TERM	= 1 << 12
+	BASE_DIR   = "/tmp/gokvdb"
+	INDEX_TERM = 1 << 12
 )
 
 type SSTable struct {
-	r      int
-	levels []*Level
+	flushSize int
+	r         int
+	levels    []*Level
 }
 
 type Level struct {
@@ -24,19 +26,20 @@ type Level struct {
 }
 
 type Table struct { // stored on disk
-	ptr 					*os.File
-	sparseIndex		[]sIndex
+	ptr         *os.File
+	sparseIndex []sIndex
 }
 
 type sIndex struct {
-	key			string
-	offset	int
+	key    string
+	offset int
 }
 
-func NewSsTable(r int) *SSTable {
+func NewSsTable(r, flushSize int) *SSTable {
 	return &SSTable{
-		r:      r,
-		levels: []*Level{},
+		flushSize: flushSize,
+		r:         r,
+		levels:    []*Level{},
 	}
 }
 
@@ -47,64 +50,107 @@ func newLevel(r int) *Level {
 	}
 }
 
-func newTable(l, o int, data []vars.KeyValue) (*Table, err) {
+func newTable(l, o, size int, data []vars.KeyValue) (*Table, error) {
 	fileName := generateTableFileName(l, o)
 	f, err := os.Create(fileName)
 	if err != nil {
 		return nil, vars.FILE_CREATE_ERROR
 	}
 
-	// merge these two functions, so it can be done in one loop
-	f.Write(util.KeyValueSliceToByteSlice(data))
-	sparseIndex := createSparseIndex(data)
-	//
+	toWrite, sparseIndex := parseKeyValue(data, size)
+	_, err = f.Write(toWrite)
+	if err != nil {
+		return nil, vars.FILE_WRITE_ERROR
+	}
 
 	return &Table{
-		ptr: f,
+		ptr:         f,
 		sparseIndex: sparseIndex,
-	}
+	}, nil
 }
 
-func createSparseIndex(data []vars.KeyValue) []sIndex {
-	ret := []sIndex {
-		sIndex{
-			key: data[0].Key,
-			offset: 0,
-		},
-	}
-	offset := len(data[0].Key) + len(data[0].Value) + 2
-	lastOffset := 0
-	
-	for idx, pair := range data[1:] {
-		if offset >= lastOffset + INDEX_TERM {
-			ret = append(ret, sIndex{
-				key: pair.Key,
+func parseKeyValue(data []vars.KeyValue, size int) ([]byte, []sIndex) {
+	bdta := make([]byte, size)
+	sidx := []sIndex{}
+	offset, lastOffset := 0, 0
+
+	for _, pair := range data {
+		byteString := util.KeyValueToByteSlice(pair)
+		byteCopyHelper(byteString, &bdta, offset)
+
+		if offset-lastOffset >= INDEX_TERM || offset == 0 {
+			sidx = append(sidx, sIndex{
+				key:    pair.Key,
 				offset: offset,
 			})
 			lastOffset = offset
 		}
-		offset += len(pair.Key) + len(pair.Value) + 2
+		offset += len(byteString)
 	}
 
-	return ret
+	return bdta, sidx
+}
+
+func byteCopyHelper(src []byte, dest *[]byte, offset int) {
+	for idx, byteCharacter := range src {
+		if len(*dest) < len(src)-idx+offset {
+			*dest = append(*dest, byteCharacter)
+		} else {
+			(*dest)[offset+idx] = byteCharacter
+		}
+	}
 }
 
 func generateTableFileName(level, order int) string {
-	return fmt.Sprintf("%s/db:%s:%s.db", BASE_DIR, level, order)
+	fileName := fmt.Sprintf("db:%d:%d.db", level, order)
+	return path.Join(BASE_DIR, fileName)
 }
 
 func (sstable *SSTable) Get(key string) (string, error) {
-	for _, level := range sstable.levels { // index matching
-		// for _, table := range level.tables {
-		// 	if val, err := table.Get(key); err == nil {
-		// 		return val, nil
-		// 	}
+	for _, level := range sstable.levels {
+		partition := 0
+		for partition < len(level.index)-1 {
+			if key >= level.index[partition][0].key && key < level.index[partition+1][0].key {
+				break
+			}
+			partition++
+		}
+		val, err := level.tables[partition].Get(key)
+		if err == nil {
+			return val, nil
 		}
 	}
 	return "", vars.GET_FAIL_ERROR
 }
 
 func (table Table) Get(key string) (string, error) {
+	partition := 0
+	from, till := -1, -1
+	for partition < len(table.sparseIndex)-1 {
+		if key >= table.sparseIndex[partition].key && key < table.sparseIndex[partition+1].key {
+			from = table.sparseIndex[partition].offset
+			break
+		}
+		partition++
+	}
 
-	return "", nil
+	if partition != len(table.sparseIndex)-1 {
+		till = table.sparseIndex[partition+1].offset
+	}
+
+	return GetFromFile(table.ptr, from, till, key)
 }
+
+func GetFromFile(f *os.File, from, till int, key string) (string, error) {
+
+}
+
+// func loadChunk(f *os.File, from, till int) ([]byte, error) {
+// 	_, err := f.Seek(int64(from), 0)
+// 	if err != nil {
+// 		return nil, vars.FILE_READ_ERROR
+// 	}
+// 	f.Close()
+// 	ret := make([]byte, )
+// 	f.Read()
+// }
