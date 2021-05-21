@@ -1,11 +1,38 @@
 package tests
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
 )
+
+func TestReadChunk(t *testing.T) {
+  fileName := "testfile.data"
+  toWrite := "this will be\nwritten"
+  byteWrite := []byte(toWrite)
+  err := ioutil.WriteFile(fileName, byteWrite, 0777)
+  defer func() {
+    os.Remove(fileName)
+  }()
+  if err != nil {
+    t.Error("WRITE FAIL")
+  }
+
+  file, err := os.Open(fileName)
+  if err != nil {
+    t.Error("READ FAIL")
+  }
+  defer func() {
+    file.Close()
+  }()
+
+  receiver := make([]byte, 10)
+  file.Seek(10, 0)
+  n, err := file.Read(receiver)
+  if string(receiver[:n]) != toWrite[10:] {
+    t.Error("PARSING FAIL")
+  }
+}
 
 func TestRW(t *testing.T) {
 	key := "alarm:test"
@@ -16,8 +43,7 @@ func TestRW(t *testing.T) {
 		os.Remove("test.data")
 	}()
 	if err != nil {
-		fmt.Println(err)
-		return
+    t.Error("WRITE FAIL")
 	}
 
 	read, err := ioutil.ReadFile("test.data")
@@ -55,9 +81,9 @@ func storeToKeyValue(b []byte) (string, string) {
 		value string
 	)
 	for i, val := range b {
-		if val == 0 {
+		if val == 3 {
 			key = string(b[:i])
-			value = string(b[i+1 : len(b)])
+			value = string(b[i+1 : len(b)-1])
 			break
 		}
 	}
