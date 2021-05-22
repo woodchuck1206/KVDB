@@ -5,8 +5,6 @@ import (
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
-const BYTE_FORMAT_AUX int = 2
-
 type Memtable struct {
 	tree      Tree
 	size      int
