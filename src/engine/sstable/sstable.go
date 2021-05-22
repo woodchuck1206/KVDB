@@ -25,17 +25,17 @@ func (this *SSTable) Get(key string) (string, error) {
 		blockIdx := 0
 
 		for ; blockIdx < len(level.blocks); blockIdx++ {
-			if level.blocks[blockIdx].index[0].Key > key {
+			if blockIdx == len(level.blocks)-1 || level.blocks[blockIdx].index[0].Key > key {
 				break
 			}
 		}
 
 		val, err := level.blocks[blockIdx].Get(key)
-		if err != nil {
+		if err == nil {
 			return val, err
 		}
 	}
-	return "", nil
+	return "", vars.GET_FAIL_ERROR
 }
 
 func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) error {

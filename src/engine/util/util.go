@@ -149,9 +149,9 @@ func BinarySearchKeyValuePairs(binTree []vars.KeyValue, key string) (string, err
 		}
 
 		if binTree[mid].Key < key {
-			right = mid
-		} else {
 			left = mid + 1
+		} else {
+			right = mid
 		}
 	}
 	return "", vars.KEY_NOT_FOUND_ERROR

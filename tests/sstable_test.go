@@ -27,7 +27,6 @@ func TestSSTable(t *testing.T) {
 		{Key: "humongous", Value: "shepherd pie"},
 		{Key: "zealous", Value: "pioneers"},
 	}
-
 	testTable.L0Merge(testData)
 	checkData := []checkData{
 		{"abraham", true},
@@ -39,10 +38,9 @@ func TestSSTable(t *testing.T) {
 		{"bottom", false},
 		{"zealous", true},
 	}
-
 	for _, datum := range checkData {
-		if _, err := testTable.Get(datum.key); (err == nil) != datum.boolean {
-			t.Error("SSTABLE FETCH ERROR")
+		if val, err := testTable.Get(datum.key); (err == nil) != datum.boolean {
+			t.Errorf("WRONG FETCH %s %s %v %v", datum.key, val, err == nil, datum.boolean)
 		}
 	}
 
