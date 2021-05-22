@@ -1,10 +1,8 @@
 package main
 
 import (
-  engine "github.com/woodchuckchoi/KVDB/src/engine"
-  "fmt"
+	_ "github.com/woodchuckchoi/KVDB/src/engine"
 )
 
 func main() {
-  fmt.Println(engine.ImportTest())
 }

@@ -14,5 +14,6 @@ var (
 
 	FORMAT_ERROR = errors.New("FORMAT ERROR")
 
+	MEM_TBL_FULL_ERROR  = errors.New("MEM TABLE FULL")
 	KEY_NOT_FOUND_ERROR = errors.New("KEY NOT FOUND")
 )

@@ -21,9 +21,8 @@ var (
 )
 
 type SSTable struct {
-	flushSize int
-	r         int
-	levels    []*Level
+	r      int
+	levels []*Level
 }
 
 type Level struct {
@@ -41,11 +40,10 @@ type sIndex struct {
 	offset int
 }
 
-func NewSsTable(r, flushSize int) *SSTable {
+func NewSsTable(r int) *SSTable {
 	return &SSTable{
-		flushSize: flushSize, // is flushSize needed?
-		r:         r,
-		levels:    []*Level{},
+		r:      r,
+		levels: []*Level{},
 	}
 }
 
@@ -75,26 +73,21 @@ func newTable(l, o, size int, data []vars.KeyValue) (*Table, error) {
 	}, nil
 }
 
-func (sstable *SSTable) SaveFlushOnDisk(data []vars.KeyValue) error {
-	var order int
-	if len(sstable.levels) == 0 {
-		order = 0
-	} else {
-		order = len(sstable.levels[0].tables)
-	}
+func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) error {
+	byteSliceToWrite, sparseIndex := parseKeyValue(keyValuePairs)
 
-	table, err := newTable(0, order, sstable.flushSize, data)
-	if err != nil {
-		return err
-	}
-
-	if len(sstable.levels) == 0 {
-		new
-		sstable.levels = append(sstable.levels)
-	}
 }
 
-func parseKeyValue(data []vars.KeyValue, size int) ([]byte, []sIndex) {
+func getDiskSizeOfKeyValuePairs(data []vars.KeyValue) int {
+	length := 0
+	for _, keyValuePair := range data {
+		length += len(keyValuePair.Key) + len(keyValuePair.Value) + 2 // for separator and delimiter
+	}
+	return length
+}
+
+func parseKeyValue(data []vars.KeyValue) ([]byte, []sIndex) {
+	size := getDiskSizeOfKeyValuePairs(data)
 	bdta := make([]byte, size)
 	sidx := []sIndex{}
 	offset, lastOffset := 0, 0
@@ -114,6 +107,27 @@ func parseKeyValue(data []vars.KeyValue, size int) ([]byte, []sIndex) {
 	}
 
 	return bdta, sidx
+}
+
+// ---
+
+func (sstable *SSTable) SaveFlushOnDisk(data []vars.KeyValue) error {
+	var order int
+	if len(sstable.levels) == 0 {
+		order = 0
+	} else {
+		order = len(sstable.levels[0].tables)
+	}
+
+	table, err := newTable(0, order, sstable.flushSize, data)
+	if err != nil {
+		return err
+	}
+
+	if len(sstable.levels) == 0 {
+		new
+		sstable.levels = append(sstable.levels)
+	}
 }
 
 func byteCopyHelper(src []byte, dest *[]byte, offset int) {
