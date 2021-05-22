@@ -31,6 +31,26 @@ func KeyValueToByteSlice(kv vars.KeyValue) []byte {
 	return ret
 }
 
+func KeyValueSliceToByteSliceAndSparseIndex(kvPairs []vars.KeyValue) ([]byte, []vars.SparseIndex) {
+	byteSlice := []byte{}
+	sparseIndex := []vars.SparseIndex{}
+	beforeOffset, curOffset := 0, 0
+	for idx, kvPair := range kvPairs {
+		byteKvPair := KeyValueToByteSlice(kvPair)
+		byteSlice = append(byteSlice, byteKvPair...)
+		if idx == 0 || curOffset-beforeOffset >= vars.INDEX_TERM {
+			sparseIndex = append(sparseIndex, vars.SparseIndex{
+				Key:    kvPair.Key,
+				Offset: curOffset,
+			})
+			beforeOffset = curOffset
+		}
+		curOffset += len(byteKvPair)
+	}
+
+	return byteSlice, sparseIndex
+}
+
 func KeyValueSliceToByteSlice(kvPairs []vars.KeyValue) []byte {
 	ret := []byte{}
 	for _, kvPair := range kvPairs {
@@ -67,9 +87,13 @@ func ByteSliceToKeyValue(byteSlice []byte) []vars.KeyValue {
 
 func WriteKeyValuePairs(fileName string, keyValuePairs []vars.KeyValue) error {
 	byteParsed := KeyValueSliceToByteSlice(keyValuePairs)
-	err := ioutil.WriteFile(fileName, byteParsed, 0777)
+	return WriteByteSlice(fileName, byteParsed)
+}
+
+func WriteByteSlice(fileName string, byteSlice []byte) error {
+	err := ioutil.WriteFile(fileName, byteSlice, 0777)
 	if err != nil {
-		err = vars.FILE_CREATE_ERROR
+		return vars.FILE_CREATE_ERROR
 	}
 	return err
 }
@@ -140,4 +164,8 @@ func GenerateFileName(level, order int) string {
 	fullPath := path.Join(BASE_DIR, folderName, fileName)
 	os.MkdirAll(folderPath, 0777)
 	return fullPath
+}
+
+func RemoveFile(fileName string) {
+	os.Remove(fileName)
 }

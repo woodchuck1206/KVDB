@@ -5,11 +5,6 @@ import (
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
-var (
-	BASE_DIR   = "/tmp/gokvdb"
-	INDEX_TERM = 1 << 20
-)
-
 type SSTable struct {
 	r      int
 	levels []*Level
@@ -21,12 +16,8 @@ type Level struct {
 
 type Block struct {
 	fileName string
-	index    []KeyOffsetPair
-}
-
-type KeyOffsetPair struct {
-	key    string
-	offset int
+	index    []vars.SparseIndex
+	size     int
 }
 
 func (this *SSTable) Get(key string) (string, error) {
@@ -34,7 +25,7 @@ func (this *SSTable) Get(key string) (string, error) {
 		blockIdx := 0
 
 		for ; blockIdx < len(level.blocks); blockIdx++ {
-			if level.blocks[blockIdx].index[0].key > key {
+			if level.blocks[blockIdx].index[0].Key > key {
 				break
 			}
 		}
@@ -48,18 +39,46 @@ func (this *SSTable) Get(key string) (string, error) {
 }
 
 func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) error {
+	// order := len(this.levels[0].blocks)
+	// fileName := util.GenerateFileName(0, order)
+	return this.merge(0, keyValuePairs)
+	// util.WriteKeyValuePairs()
+	// return nil
+}
 
+func (this *SSTable) merge(level int, keyValuePairs []vars.KeyValue) error {
+	order := 0
+	if len(this.levels) > level {
+		order = len(this.levels[level].blocks)
+	} else {
+		this.levels = append(this.levels, &Level{
+			blocks: []*Block{},
+		})
+	}
+
+	fileName := util.GenerateFileName(level, order)
+	byteSlice, sparseIndex := util.KeyValueSliceToByteSliceAndSparseIndex(keyValuePairs)
+	if util.WriteByteSlice(fileName, byteSlice) != nil {
+		return vars.FILE_CREATE_ERROR
+	}
+
+	this.levels[level].blocks = append(this.levels[level].blocks, &Block{
+		fileName: fileName,
+		index:    sparseIndex,
+		size:     len(byteSlice),
+	})
+	return nil
 }
 
 func (this *Block) Get(key string) (string, error) {
 	from, till := 0, -1
 
 	for _, keyOffsetPair := range this.index {
-		if key >= keyOffsetPair.key {
-			from = keyOffsetPair.offset
+		if key >= keyOffsetPair.Key {
+			from = keyOffsetPair.Offset
 		}
-		if key < keyOffsetPair.key {
-			till = keyOffsetPair.offset
+		if key < keyOffsetPair.Key {
+			till = keyOffsetPair.Offset
 			break
 		}
 	}
@@ -70,6 +89,21 @@ func (this *Block) Get(key string) (string, error) {
 	}
 
 	return util.BinarySearchKeyValuePairs(keyValuePairs, key)
+}
+
+func NewSsTable(r int) *SSTable {
+	return &SSTable{
+		r:      r,
+		levels: []*Level{},
+	}
+}
+
+func CleanAll(ssTable *SSTable) {
+	for _, level := range ssTable.levels {
+		for _, block := range level.blocks {
+			util.RemoveFile(block.fileName)
+		}
+	}
 }
 
 // type SSTable struct {

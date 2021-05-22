@@ -25,7 +25,7 @@ func NewMemtable(threshold int) *Memtable {
 	}
 }
 
-func (memtable *Memtable) Put(key, value string) error {
+func (this *Memtable) Put(key, value string) error {
 	// defer func() error {
 	// 	var ret error = nil
 	// 	if err := recover(); err != nil {
@@ -35,24 +35,24 @@ func (memtable *Memtable) Put(key, value string) error {
 	// 	return ret
 	// }()
 
-	if err := memtable.tree.Put(key, value); err != nil {
+	if err := this.tree.Put(key, value); err != nil {
 		return err
 	}
-	memtable.size += varToSize(key, value)
-	if memtable.size >= memtable.threshold { //
+	this.size += varToSize(key, value)
+	if this.size >= this.threshold { //
 		return vars.MEM_TBL_FULL_ERROR
 		// memtable.sstb.Merge(memtable.flush())
 	}
 	return nil
 }
 
-func (memtable *Memtable) Get(key string) (string, error) {
-	return memtable.tree.Get(key)
+func (this *Memtable) Get(key string) (string, error) {
+	return this.tree.Get(key)
 }
 
-func (memtable *Memtable) Flush() []vars.KeyValue {
-	toFlush := memtable.tree.Flush()
-	memtable.tree = rbtree.NewTree()
+func (this *Memtable) Flush() []vars.KeyValue {
+	toFlush := this.tree.Flush()
+	this.tree = rbtree.NewTree()
 	return toFlush
 }
 

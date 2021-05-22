@@ -23,18 +23,18 @@ type Node struct {
 	right  *Node
 }
 
-func (node *Node) Get(key string) (string, error) {
-	if node.key == key {
-		return node.value, nil
+func (this *Node) Get(key string) (string, error) {
+	if this.key == key {
+		return this.value, nil
 	}
-	if node == nil {
+	if this == nil {
 		return "", vars.GET_FAIL_ERROR
 	}
 
-	if node.key < key {
-		return node.left.Get(key)
+	if this.key < key {
+		return this.left.Get(key)
 	}
-	return node.right.Get(key)
+	return this.right.Get(key)
 }
 
 func nodeColour(node *Node) colour {
@@ -75,12 +75,12 @@ func NewTree() *RedBlackTree {
 	}
 }
 
-func (rbtree *RedBlackTree) Get(key string) (string, error) {
-	node := rbtree.root
+func (this *RedBlackTree) Get(key string) (string, error) {
+	node := this.root
 	return node.Get(key)
 }
 
-func (rbtree *RedBlackTree) Put(key string, value string) error {
+func (this *RedBlackTree) Put(key string, value string) error {
 	defer func() error {
 		var ret error = nil
 		if err := recover(); err != nil {
@@ -98,7 +98,7 @@ func (rbtree *RedBlackTree) Put(key string, value string) error {
 		right:  nil,
 	}
 
-	x := rbtree.root
+	x := this.root
 	var y *Node = nil
 	for x != nil {
 		y = x
@@ -111,7 +111,7 @@ func (rbtree *RedBlackTree) Put(key string, value string) error {
 
 	node.parent = y
 	if y == nil {
-		rbtree.root = node
+		this.root = node
 	} else if key < y.key {
 		y.left = node
 	} else if key > y.key {
@@ -127,61 +127,61 @@ func (rbtree *RedBlackTree) Put(key string, value string) error {
 	if node.parent.parent == nil {
 		return nil
 	}
-	rbtree.insertFix1(node)
+	this.insertFix1(node)
 	return nil
 }
 
-func (rbtree *RedBlackTree) insertFix1(node *Node) {
+func (this *RedBlackTree) insertFix1(node *Node) {
 	if node.parent == nil {
 		node.colour = black
 	} else {
-		rbtree.insertFix2(node)
+		this.insertFix2(node)
 	}
 }
 
-func (rbtree *RedBlackTree) insertFix2(node *Node) {
+func (this *RedBlackTree) insertFix2(node *Node) {
 	if nodeColour(node.parent) == black {
 		return
 	}
-	rbtree.insertFix3(node)
+	this.insertFix3(node)
 }
 
-func (rbtree *RedBlackTree) insertFix3(node *Node) {
+func (this *RedBlackTree) insertFix3(node *Node) {
 	uncle := nodeUncle(node)
 	if nodeColour(uncle) == red {
 		node.parent.colour = black
 		uncle.colour = black
 		nodeGrandparent(node).colour = red
-		rbtree.insertFix1(nodeGrandparent(node))
+		this.insertFix1(nodeGrandparent(node))
 	} else {
-		rbtree.insertFix4(node)
+		this.insertFix4(node)
 	}
 }
 
-func (rbtree *RedBlackTree) insertFix4(node *Node) {
+func (this *RedBlackTree) insertFix4(node *Node) {
 	grandparent := nodeGrandparent(node)
 	if node == node.parent.right && node.parent == grandparent.left {
-		rbtree.leftRotate(node.parent)
+		this.leftRotate(node.parent)
 		node = node.left
 	} else if node == node.parent.left && node.parent == grandparent.right {
-		rbtree.rightRotate(node.parent)
+		this.rightRotate(node.parent)
 		node = node.right
 	}
-	rbtree.insertFix5(node)
+	this.insertFix5(node)
 }
 
-func (rbtree *RedBlackTree) insertFix5(node *Node) {
+func (this *RedBlackTree) insertFix5(node *Node) {
 	node.parent.colour = black
 	grandparent := nodeGrandparent(node)
 	grandparent.colour = red
 	if node == node.parent.left && node.parent == grandparent.left {
-		rbtree.rightRotate(grandparent)
+		this.rightRotate(grandparent)
 	} else if node == node.parent.right && node.parent == grandparent.right {
-		rbtree.leftRotate(grandparent)
+		this.leftRotate(grandparent)
 	}
 }
 
-func (rbtree *RedBlackTree) leftRotate(node *Node) {
+func (this *RedBlackTree) leftRotate(node *Node) {
 	y := node.right
 	node.right = y.left
 	if y.left != nil {
@@ -189,7 +189,7 @@ func (rbtree *RedBlackTree) leftRotate(node *Node) {
 	}
 	y.parent = node.parent
 	if node.parent == nil {
-		rbtree.root = y
+		this.root = y
 	} else if node == node.parent.left {
 		node.parent.left = y
 	} else {
@@ -199,7 +199,7 @@ func (rbtree *RedBlackTree) leftRotate(node *Node) {
 	node.parent = y
 }
 
-func (rbtree *RedBlackTree) rightRotate(node *Node) {
+func (this *RedBlackTree) rightRotate(node *Node) {
 	y := node.left
 	node.left = y.right
 	if y.right != nil {
@@ -207,7 +207,7 @@ func (rbtree *RedBlackTree) rightRotate(node *Node) {
 	}
 	y.parent = node.parent
 	if node.parent == nil {
-		rbtree.root = y
+		this.root = y
 	} else if node == node.parent.right {
 		node.parent.right = y
 	} else {
@@ -217,9 +217,9 @@ func (rbtree *RedBlackTree) rightRotate(node *Node) {
 	node.parent = y
 }
 
-func (rbtree *RedBlackTree) Flush() []vars.KeyValue {
+func (this *RedBlackTree) Flush() []vars.KeyValue {
 	ret := []vars.KeyValue{}
-	flushHelper(rbtree.root, &ret)
+	flushHelper(this.root, &ret)
 	return ret
 }
 

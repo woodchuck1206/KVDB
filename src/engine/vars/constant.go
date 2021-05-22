@@ -6,4 +6,5 @@ const (
 	BYTE_FORMAT_AUX int  = 2
 	SEPARATOR       byte = 3
 	DELIMITER       byte = 0
+	INDEX_TERM      int  = 1 << 20
 )
