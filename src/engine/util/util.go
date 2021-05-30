@@ -38,7 +38,7 @@ func KeyValueSliceToByteSliceAndSparseIndex(kvPairs []vars.KeyValue) ([]byte, []
 	for idx, kvPair := range kvPairs {
 		byteKvPair := KeyValueToByteSlice(kvPair)
 		byteSlice = append(byteSlice, byteKvPair...)
-		if idx == 0 || curOffset-beforeOffset >= vars.INDEX_TERM {
+		if idx == 0 || idx == len(kvPairs)-1 || curOffset-beforeOffset >= vars.INDEX_TERM {
 			sparseIndex = append(sparseIndex, vars.SparseIndex{
 				Key:    kvPair.Key,
 				Offset: curOffset,
