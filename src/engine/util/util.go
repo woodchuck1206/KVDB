@@ -6,12 +6,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"time"
 
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
-var (
+const (
 	BASE_DIR = "/tmp/gokvdb"
+	TIME_FMT = "2006-01-02T15:04:05"
 )
 
 func KeyValueToByteSlice(kv vars.KeyValue) []byte {
@@ -140,26 +142,10 @@ func IntPow(a, b int) int {
 	return ret
 }
 
-func BinarySearchKeyValuePairs(binTree []vars.KeyValue, key string) (string, error) {
-	left, right := 0, len(binTree)
-	for left < right {
-		mid := (left + right) / 2
-		if binTree[mid].Key == key {
-			return binTree[mid].Value, nil
-		}
-
-		if binTree[mid].Key < key {
-			left = mid + 1
-		} else {
-			right = mid
-		}
-	}
-	return "", vars.KEY_NOT_FOUND_ERROR
-}
-
 func GenerateFileName(level, order int) string {
-	folderName := fmt.Sprintf("db-level-%d.data", level)
-	fileName := fmt.Sprintf("db-%d-%d.data", level, order)
+	postfix := time.Now().Local().Format(TIME_FMT)
+	folderName := fmt.Sprintf("db-level-%d", level)
+	fileName := fmt.Sprintf("db-%d-%d-%s.data", level, order, postfix)
 	folderPath := path.Join(BASE_DIR, folderName)
 	fullPath := path.Join(BASE_DIR, folderName, fileName)
 	os.MkdirAll(folderPath, 0777)

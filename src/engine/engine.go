@@ -2,12 +2,9 @@ package engine
 
 import (
 	"github.com/woodchuckchoi/KVDB/src/engine/memtable"
-	memtable "github.com/woodchuckchoi/KVDB/src/engine/memtable"
 	"github.com/woodchuckchoi/KVDB/src/engine/sstable"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
-
 	// sstable "github.com/woodchuckchoi/KVDB/src/engine/sstable"
-	myVar "github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
 var r int = 3
@@ -25,7 +22,7 @@ type Memtable interface {
 
 type SStable interface {
 	Get(string) (string, error)
-	L0Merge([]myVar.KeyValue) error
+	L0Merge([]vars.KeyValue) error
 }
 
 func NewEngine(memTableThresholdSize, r int) *Engine {
