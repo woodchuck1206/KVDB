@@ -4,11 +4,14 @@ import (
 	"errors"
 	"io"
 	"os"
+	"sort"
 	"testing"
 )
 
 const (
-	bufferSize = 1
+	bufferSize = 2
+	merge1Data = "abdejjlmoooruv"
+	merge2Data = "ceeeeeeefguuuz"
 )
 
 type MultiMergeType struct {
@@ -19,11 +22,11 @@ type MultiMergeType struct {
 	File   *os.File
 }
 
-func (this MultiMergeType) IsDone() bool {
+func (this *MultiMergeType) IsDone() bool {
 	return this.Finish
 }
 
-func (this MultiMergeType) LoadMore() {
+func (this *MultiMergeType) LoadMore() {
 	_, err := this.File.Read(this.Buffer)
 	this.Idx = 0
 	if err == io.EOF {
@@ -31,24 +34,30 @@ func (this MultiMergeType) LoadMore() {
 	}
 }
 
-func (this MultiMergeType) Get() (byte, error) {
+func (this *MultiMergeType) Peek() (byte, error) {
 	var ret byte
 	if this.Finish {
 		return ret, errors.New("Finished")
 	}
 
-	if this.Idx == len(this.Buffer) || this.Init {
+	if this.Idx >= len(this.Buffer) || !this.Init {
 		this.Init = true
+		this.Idx = 0
 		this.LoadMore()
 	}
 
 	ret = this.Buffer[this.Idx]
-	if ret == 10 {
+	if ret == 10 { // comes at the end of a line && only for test
 		this.Finish = true
 		return ret, errors.New("Finished")
 	}
-	this.Idx++
 	return ret, nil
+}
+
+func (this *MultiMergeType) Get() (byte, error) {
+	ret, err := this.Peek()
+	this.Idx++
+	return ret, err
 }
 
 func TestMultiMerge(t *testing.T) {
@@ -83,14 +92,41 @@ func TestMultiMerge(t *testing.T) {
 		File:   f2,
 	})
 
+	merged := []byte{}
 	for {
-
-		allDone := true
+		var smallestBuffer *MultiMergeType
 		for i := 0; i < len(buffers); i++ {
-			allDone = allDone && buffers[i].IsDone()
+			ret, err := buffers[i].Peek()
+			if err != nil {
+				continue
+			}
+			if smallestBuffer != nil {
+				origRet, _ := smallestBuffer.Peek()
+				if origRet <= ret {
+					continue
+				}
+			}
+
+			smallestBuffer = &(buffers[i])
 		}
-		if allDone {
+
+		if smallestBuffer == nil {
 			break
 		}
+		toAdd, _ := smallestBuffer.Get()
+		merged = append(merged, toAdd)
+	}
+	answer := []byte{}
+	answer = append(answer, []byte(merge1Data)...)
+	answer = append(answer, []byte(merge2Data)...)
+	sort.Slice(answer, func(i, j int) bool {
+		if answer[i] < answer[j] {
+			return true
+		}
+		return false
+	})
+
+	if string(merged) != string(answer) {
+		t.Fail()
 	}
 }
