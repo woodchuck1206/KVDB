@@ -11,10 +11,33 @@ import (
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
+type CompactionTarget interface {
+	GetSparseIndex() []vars.SparseIndex
+	GetCurrentIndex() int
+	GetFile() *os.File
+}
+
 const (
 	BASE_DIR = "/tmp/gokvdb"
 	TIME_FMT = "2006-01-02T15:04:05"
 )
+
+func GetSparseIndexSize(compactionTarget CompactionTarget) int {
+	currentIndex := compactionTarget.GetCurrentIndex()
+	sparseIndex := compactionTarget.GetSparseIndex()
+
+	if currentIndex >= len(sparseIndex) {
+		return -1
+	}
+
+	if currentIndex == len(sparseIndex)-1 {
+		file := compactionTarget.GetFile()
+		fileStat, _ := file.Stat()
+		// file size - last offset
+		return int(fileStat.Size()) - sparseIndex[currentIndex].Offset
+	}
+	return sparseIndex[currentIndex+1].Offset - sparseIndex[currentIndex].Offset
+}
 
 func KeyValueToByteSlice(kv vars.KeyValue) []byte {
 	ret := make([]byte, len(kv.Key)+len(kv.Value)+2)

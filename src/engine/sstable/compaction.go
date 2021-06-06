@@ -24,7 +24,7 @@ type MergeUnit struct {
 	File   *os.File
 }
 
-func (this *MergeUnit) Load() { // load size should be managed
+func (this *MergeUnit) Load() { // load size should be managed // each key value pairs sizes differ
 	_, err := this.File.Read(this.Buffer)
 	this.Index = 0
 	if err == io.EOF {
