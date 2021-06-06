@@ -11,6 +11,7 @@ var (
 	FILE_CREATE_ERROR = errors.New("FILE CREATE ERROR")
 	FILE_WRITE_ERROR  = errors.New("FILE WRITE ERROR")
 	FILE_READ_ERROR   = errors.New("FILE READ ERROR")
+	FILE_EOF_ERROR    = errors.New("EOF")
 
 	FORMAT_ERROR = errors.New("FORMAT ERROR")
 
