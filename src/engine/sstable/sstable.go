@@ -87,16 +87,13 @@ func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) error {
 }
 
 func (this *SSTable) merge(level int, keyValuePairs []vars.KeyValue) error {
-	order := 0
-	if len(this.levels) > level {
-		order = len(this.levels[level].Blocks)
-	} else {
+	if len(this.levels) <= level {
 		this.levels = append(this.levels, &Level{
 			Blocks: []*Block{},
 		})
 	}
 
-	fileName := util.GenerateFileName(level, order)
+	fileName := util.GenerateFileName(level)
 	byteSlice, sparseIndex := util.KeyValueSliceToByteSliceAndSparseIndex(keyValuePairs)
 	if util.WriteByteSlice(fileName, byteSlice) != nil {
 		return vars.FILE_CREATE_ERROR

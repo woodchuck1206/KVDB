@@ -6,32 +6,61 @@ import (
 	"testing"
 )
 
+func TestAppend(t *testing.T) {
+	fileName := "anotherTest.data"
+	byteWrite := make([]byte, 1)
+	cmp := []byte{}
+	f, _ := os.Open(fileName)
+	// f.Chmod(fs.ModeAppend)
+
+	for i := 0; i < 10; i++ {
+		byteWrite[0] = byte(int('a') + i)
+		cmp = append(cmp, byte(int('a')+i))
+		f.Write(byteWrite)
+	}
+	f.Close()
+
+	f, _ = os.Open(fileName)
+	ret := make([]byte, 100)
+	l, _ := f.Read(ret)
+	os.Remove(fileName)
+	if l != 10 {
+		t.Errorf("length not match %v with values %v \ncmp %v", l, string(ret), string(cmp))
+	}
+
+	for i := 0; i < l; i++ {
+		if cmp[i] != ret[i] {
+			t.Errorf("byte not match at %v", i)
+		}
+	}
+}
+
 func TestReadChunk(t *testing.T) {
-  fileName := "testfile.data"
-  toWrite := "this will be\nwritten"
-  byteWrite := []byte(toWrite)
-  err := ioutil.WriteFile(fileName, byteWrite, 0777)
-  defer func() {
-    os.Remove(fileName)
-  }()
-  if err != nil {
-    t.Error("WRITE FAIL")
-  }
+	fileName := "testfile.data"
+	toWrite := "this will be\nwritten"
+	byteWrite := []byte(toWrite)
+	err := ioutil.WriteFile(fileName, byteWrite, 0777)
+	defer func() {
+		os.Remove(fileName)
+	}()
+	if err != nil {
+		t.Error("WRITE FAIL")
+	}
 
-  file, err := os.Open(fileName)
-  if err != nil {
-    t.Error("READ FAIL")
-  }
-  defer func() {
-    file.Close()
-  }()
+	file, err := os.Open(fileName)
+	if err != nil {
+		t.Error("READ FAIL")
+	}
+	defer func() {
+		file.Close()
+	}()
 
-  receiver := make([]byte, 10)
-  file.Seek(10, 0)
-  n, err := file.Read(receiver)
-  if string(receiver[:n]) != toWrite[10:] {
-    t.Error("PARSING FAIL")
-  }
+	receiver := make([]byte, 10)
+	file.Seek(10, 0)
+	n, err := file.Read(receiver)
+	if string(receiver[:n]) != toWrite[10:] {
+		t.Error("PARSING FAIL")
+	}
 }
 
 func TestRW(t *testing.T) {
@@ -43,7 +72,7 @@ func TestRW(t *testing.T) {
 		os.Remove("test.data")
 	}()
 	if err != nil {
-    t.Error("WRITE FAIL")
+		t.Error("WRITE FAIL")
 	}
 
 	read, err := ioutil.ReadFile("test.data")
