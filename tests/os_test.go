@@ -10,13 +10,16 @@ func TestAppend(t *testing.T) {
 	fileName := "anotherTest.data"
 	byteWrite := make([]byte, 1)
 	cmp := []byte{}
-	f, _ := os.Open(fileName)
+	f, err := os.Create(fileName)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
 	// f.Chmod(fs.ModeAppend)
 
 	for i := 0; i < 10; i++ {
 		byteWrite[0] = byte(int('a') + i)
 		cmp = append(cmp, byte(int('a')+i))
-		f.Write(byteWrite)
+		f.Write(byteWrite) // simple Write function appends to the file by default
 	}
 	f.Close()
 
