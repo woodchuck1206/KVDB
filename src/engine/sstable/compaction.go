@@ -81,62 +81,89 @@ func NewCompactor(chanBuffer int) (*Compactor, chan<- MergeSignal) {
 	return &Compactor{Receiver: channel}, channel
 }
 
-// func MultiMerge(level *Level, l int) Block {
-// 	mergeUnits := []MergeUnit{}
-// 	mergedKeyValues := []vars.KeyValue{}
+func MultiMerge(level *Level, l int) Block {
+	mergeUnits := []MergeUnit{}
+	mergeSparseIndex := []vars.SparseIndex{}
+	offsetBefore := -1
+	mergeSize := 0
+	indexTerm := 1024
 
-// 	for _, block := range level.Blocks {
-// 		file, err := os.Open(block.FileName)
-// 		if err == nil {
-// 			mergeUnits = append(mergeUnits, MergeUnit{
-// 				KeyValue:    []vars.KeyValue{},
-// 				SparseIndex: block.Index,
-// 				SparseIdx:   0,
-// 				Finish:      false,
-// 				File:        file,
-// 			})
-// 		}
-// 	}
+	for _, block := range level.Blocks {
+		file, err := os.Open(block.FileName)
+		defer file.Close()
 
-// 	fileName := util.GenerateFileName(l)
-// 	fullPath := util.GetFullPathOf(l, fileName)
-// 	writeFD, err := os.Open(fullPath)
-// 	if err != nil {
-// 		// error handling // create a new filename?
-// 	}
+		if err == nil {
+			mergeUnits = append(mergeUnits, MergeUnit{
+				KeyValue:    []vars.KeyValue{},
+				SparseIndex: block.Index,
+				SparseIdx:   0,
+				Finish:      false,
+				File:        file,
+			})
+		}
+	}
 
-// 	// multi-merge
-// 	for {
-// 		var unitWithSmallestKeyValue *MergeUnit
-// 		nextMergeUnits := []MergeUnit{}
-// 		for i := 0; i < len(mergeUnits); i++ {
-// 			keyValue, err := mergeUnits[i].Get()
-// 			if err != nil { // EOF
-// 				continue
-// 			}
-// 			nextMergeUnits = append(nextMergeUnits, mergeUnits[i])
-// 			if unitWithSmallestKeyValue != nil {
-// 				curSmallestKeyValue, _ := unitWithSmallestKeyValue.Get()
-// 				if curSmallestKeyValue.Key > keyValue.Key {
-// 					unitWithSmallestKeyValue = &(mergeUnits[i])
-// 				}
-// 			}
-// 		}
+	fileName := util.GenerateFileName(l)
+	fullPath := util.GetFullPathOf(l, fileName)
+	writeFD, err := os.Open(fullPath)
+	if err != nil {
+		// error handling // create a new filename?
+	}
+	defer writeFD.Close()
 
-// 		if unitWithSmallestKeyValue == nil { // no more merge units to process
-// 			break
-// 		}
-// 		toAdd, _ := unitWithSmallestKeyValue.Pop()
+	var kvToAdd vars.KeyValue
+	// multi-merge
+	for {
+		var unitWithSmallestKeyValue *MergeUnit
+		nextMergeUnits := []MergeUnit{}
+		for i := 0; i < len(mergeUnits); i++ {
+			keyValue, err := mergeUnits[i].Get()
+			if err != nil { // EOF
+				continue
+			}
+			nextMergeUnits = append(nextMergeUnits, mergeUnits[i])
+			if unitWithSmallestKeyValue != nil {
+				curSmallestKeyValue, _ := unitWithSmallestKeyValue.Get()
+				if curSmallestKeyValue.Key > keyValue.Key {
+					unitWithSmallestKeyValue = &(mergeUnits[i])
+				}
+			}
+		}
 
-// 		// small batch append and write,
-// 		mergedKeyValues = append(mergedKeyValues, toAdd)
-// 		mergeUnits = nextMergeUnits
-// 	}
+		if unitWithSmallestKeyValue == nil { // no more merge units to process
+			break
+		}
+		kvToAdd, _ = unitWithSmallestKeyValue.Pop()
+		byteKV := util.KeyValueToByteSlice(kvToAdd)
 
-// 	// the mergedKeyValues should not keep all records obviously, it should write as it reads
-// 	// util.KeyValueSliceToByteSliceAndSparseIndex()
-// 	// util.WriteKeyValuePairs()
-// }
+		if offsetBefore == -1 || mergeSize-offsetBefore >= indexTerm {
+			mergeSparseIndex = append(mergeSparseIndex, vars.SparseIndex{
+				Key:    kvToAdd.Key,
+				Offset: mergeSize,
+			})
+
+			offsetBefore = mergeSize
+			mergeSize += len(byteKV)
+		}
+
+		writeFD.Write(byteKV)
+		mergeUnits = nextMergeUnits
+	}
+
+	if mergeSparseIndex[len(mergeSparseIndex)-1].Key != kvToAdd.Key {
+		byteKV := util.KeyValueToByteSlice(kvToAdd)
+		mergeSparseIndex = append(mergeSparseIndex, vars.SparseIndex{
+			Key:    kvToAdd.Key,
+			Offset: mergeSize - len(byteKV),
+		})
+	}
+
+	return Block{
+		FileName: fileName,
+		Index:    mergeSparseIndex,
+		Size:     mergeSize,
+	}
+}
 
 // func (this *Compactor) Run() {
 // 	for {
