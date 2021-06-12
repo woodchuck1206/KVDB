@@ -1,6 +1,7 @@
 package sstable
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/woodchuckchoi/KVDB/src/engine/util"
@@ -105,8 +106,9 @@ func MultiMerge(level *Level, l int) Block {
 
 	fileName := util.GenerateFileName(l)
 	fullPath := util.GetFullPathOf(l, fileName)
-	writeFD, err := os.Open(fullPath)
+	writeFD, err := os.Create(fullPath)
 	if err != nil {
+		fmt.Println("NOT ABLE TO MAKE A FILE!", err)
 		// error handling // create a new filename?
 	}
 	defer writeFD.Close()
@@ -114,28 +116,33 @@ func MultiMerge(level *Level, l int) Block {
 	var kvToAdd vars.KeyValue
 	// multi-merge
 	for {
+		fmt.Println("In For Loop")
 		var unitWithSmallestKeyValue *MergeUnit
-		nextMergeUnits := []MergeUnit{}
+		// nextMergeUnits := []MergeUnit{}
 		for i := 0; i < len(mergeUnits); i++ {
 			keyValue, err := mergeUnits[i].Get()
 			if err != nil { // EOF
+				mergeUnits = append(mergeUnits[:i], mergeUnits[i+1:]...)
 				continue
 			}
-			nextMergeUnits = append(nextMergeUnits, mergeUnits[i])
+			// nextMergeUnits = append(nextMergeUnits, mergeUnits[i])
 			if unitWithSmallestKeyValue != nil {
 				curSmallestKeyValue, _ := unitWithSmallestKeyValue.Get()
 				if curSmallestKeyValue.Key > keyValue.Key {
 					unitWithSmallestKeyValue = &(mergeUnits[i])
 				}
+			} else { // unitWithSmallestKeyValue == nil
+				unitWithSmallestKeyValue = &mergeUnits[i]
 			}
 		}
-
 		if unitWithSmallestKeyValue == nil { // no more merge units to process
 			break
 		}
+
 		kvToAdd, _ = unitWithSmallestKeyValue.Pop()
 		byteKV := util.KeyValueToByteSlice(kvToAdd)
-
+		mergeSize += len(byteKV)
+		fmt.Println(kvToAdd.Key)
 		if offsetBefore == -1 || mergeSize-offsetBefore >= indexTerm {
 			mergeSparseIndex = append(mergeSparseIndex, vars.SparseIndex{
 				Key:    kvToAdd.Key,
@@ -143,11 +150,10 @@ func MultiMerge(level *Level, l int) Block {
 			})
 
 			offsetBefore = mergeSize
-			mergeSize += len(byteKV)
 		}
-
+		fmt.Println(mergeSize)
 		writeFD.Write(byteKV)
-		mergeUnits = nextMergeUnits
+		// mergeUnits = nextMergeUnits
 	}
 
 	if mergeSparseIndex[len(mergeSparseIndex)-1].Key != kvToAdd.Key {
