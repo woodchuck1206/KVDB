@@ -116,7 +116,6 @@ func MultiMerge(level *Level, l int) Block {
 	var kvToAdd vars.KeyValue
 	// multi-merge
 	for {
-		fmt.Println("In For Loop")
 		var unitWithSmallestKeyValue *MergeUnit
 		// nextMergeUnits := []MergeUnit{}
 		for i := 0; i < len(mergeUnits); i++ {
@@ -142,7 +141,6 @@ func MultiMerge(level *Level, l int) Block {
 		kvToAdd, _ = unitWithSmallestKeyValue.Pop()
 		byteKV := util.KeyValueToByteSlice(kvToAdd)
 		mergeSize += len(byteKV)
-		fmt.Println(kvToAdd.Key)
 		if offsetBefore == -1 || mergeSize-offsetBefore >= indexTerm {
 			mergeSparseIndex = append(mergeSparseIndex, vars.SparseIndex{
 				Key:    kvToAdd.Key,
@@ -151,7 +149,6 @@ func MultiMerge(level *Level, l int) Block {
 
 			offsetBefore = mergeSize
 		}
-		fmt.Println(mergeSize)
 		writeFD.Write(byteKV)
 		// mergeUnits = nextMergeUnits
 	}
@@ -165,7 +162,7 @@ func MultiMerge(level *Level, l int) Block {
 	}
 
 	return Block{
-		FileName: fileName,
+		FileName: fullPath,
 		Index:    mergeSparseIndex,
 		Size:     mergeSize,
 	}

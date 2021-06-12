@@ -2,9 +2,12 @@ package tests
 
 import (
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"os"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/woodchuckchoi/KVDB/src/engine/sstable"
 	"github.com/woodchuckchoi/KVDB/src/engine/util"
@@ -24,28 +27,35 @@ func generateRandomAlphabet() byte {
 }
 
 func TestCompaction(t *testing.T) {
+	rand.Seed(int64(time.Now().Second()))
+	defer func() {
+		for i := 0; i < 3; i++ {
+			fileName := fmt.Sprintf("block%v.data", i)
+			os.Remove(fileName)
+		}
+	}()
 
 	block1KeyValue := []vars.KeyValue{}
 	block2KeyValue := []vars.KeyValue{}
 	block3KeyValue := []vars.KeyValue{}
 
 	testBlocks := []*sstable.Block{}
-	for idx, block := range [][]vars.KeyValue{block1KeyValue, block2KeyValue, block3KeyValue} {
+	for idx, block := range []*[]vars.KeyValue{&block1KeyValue, &block2KeyValue, &block3KeyValue} {
 		for i := 0; i < 100; i++ {
 			key, value := generateRandomString(20), generateRandomString(50)
-			block = append(block, vars.KeyValue{
+			*block = append(*block, vars.KeyValue{
 				Key:   key,
 				Value: value,
 			})
 		}
 
-		sort.Slice(block, func(i, j int) bool {
-			if block[i].Key < block[j].Key {
+		sort.Slice(*block, func(i, j int) bool {
+			if (*block)[i].Key < (*block)[j].Key {
 				return true
 			}
 			return false
 		})
-		byteSlice, sparseIndex := util.KeyValueSliceToByteSliceAndSparseIndex(block)
+		byteSlice, sparseIndex := util.KeyValueSliceToByteSliceAndSparseIndex(*block)
 		fileName := fmt.Sprintf("block%v.data", idx)
 		util.WriteByteSlice(fileName, byteSlice)
 
@@ -65,5 +75,34 @@ func TestCompaction(t *testing.T) {
 	}
 
 	mergedBlock := sstable.MultiMerge(&testLevel, 1)
-	t.Errorf("%v\n%v\n%v", mergedBlock.FileName, mergedBlock.Index, mergedBlock.Size)
+	defer os.Remove(mergedBlock.FileName)
+	mergedFile, _ := os.Open(mergedBlock.FileName)
+	bytes, _ := ioutil.ReadAll(mergedFile)
+	mergedKeyValues := util.ByteSliceToKeyValue(bytes)
+
+	compareKeyValues := []vars.KeyValue{}
+	for _, block := range [][]vars.KeyValue{block1KeyValue, block2KeyValue, block3KeyValue} {
+		t.Log(len(block))
+		compareKeyValues = append(compareKeyValues, block...)
+	}
+
+	sort.Slice(compareKeyValues, func(i, j int) bool {
+		if compareKeyValues[i].Key < compareKeyValues[j].Key {
+			return true
+		}
+		return false
+	})
+
+	if len(compareKeyValues) != len(mergedKeyValues) {
+		t.Error("Length Not Match", len(compareKeyValues), len(mergedKeyValues))
+	}
+
+	t.Logf("Merged Index: %v\nMerged Size: %v\n", mergedBlock.Index, mergedBlock.Size)
+
+	for i := 0; i < len(compareKeyValues); i++ {
+		if compareKeyValues[i] != mergedKeyValues[i] {
+			t.Errorf("\n%vth Comparison\nOriginal: %v\nMerged: %v", i, compareKeyValues[i], mergedKeyValues[i])
+		}
+	}
+
 }

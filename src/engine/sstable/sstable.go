@@ -94,13 +94,14 @@ func (this *SSTable) merge(level int, keyValuePairs []vars.KeyValue) error {
 	}
 
 	fileName := util.GenerateFileName(level)
+	fullPath := util.GetFullPathOf(level, fileName)
 	byteSlice, sparseIndex := util.KeyValueSliceToByteSliceAndSparseIndex(keyValuePairs)
-	if util.WriteByteSlice(fileName, byteSlice) != nil {
+	if util.WriteByteSlice(fullPath, byteSlice) != nil {
 		return vars.FILE_CREATE_ERROR
 	}
 
 	this.levels[level].Blocks = append(this.levels[level].Blocks, &Block{
-		FileName: fileName,
+		FileName: fullPath,
 		Index:    sparseIndex,
 		Size:     len(byteSlice),
 	})

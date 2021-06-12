@@ -167,17 +167,15 @@ func IntPow(a, b int) int {
 
 func GenerateFileName(level int) string {
 	postfix := time.Now().Local().Format(TIME_FMT)
-	folderName := fmt.Sprintf("db-level-%d", level)
 	fileName := fmt.Sprintf("db-%d-%s.data", level, postfix)
-	folderPath := path.Join(BASE_DIR, folderName)
-	fullPath := path.Join(BASE_DIR, folderName, fileName)
-	os.MkdirAll(folderPath, 0777)
-	return fullPath
+	return fileName
 }
 
 func GetFullPathOf(level int, fileName string) string {
 	folderName := fmt.Sprintf("db-level-%d", level)
-	return path.Join(BASE_DIR, folderName, fileName)
+	directoryPath := path.Join(BASE_DIR, folderName)
+	os.MkdirAll(directoryPath, 0777)
+	return path.Join(directoryPath, fileName)
 }
 
 func RemoveFile(fileName string) {
