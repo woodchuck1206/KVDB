@@ -74,6 +74,11 @@ func TestCompaction(t *testing.T) {
 		Blocks: testBlocks,
 	}
 
+	t.Log("MergeUnits Ready")
+	for i := 0; i < len(testLevel.Blocks); i++ {
+		t.Logf("%v\n", testLevel.Blocks[i].FileName)
+	}
+
 	mergedBlock := sstable.MultiMerge(&testLevel, 1)
 	defer os.Remove(mergedBlock.FileName)
 	mergedFile, _ := os.Open(mergedBlock.FileName)
@@ -97,7 +102,7 @@ func TestCompaction(t *testing.T) {
 		t.Error("Length Not Match", len(compareKeyValues), len(mergedKeyValues))
 	}
 
-	t.Logf("Merged Index: %v\nMerged Size: %v\n", mergedBlock.Index, mergedBlock.Size)
+	t.Logf("Merged Index: %v\nMerged Size: %v\nBytes Size: %v\n", mergedBlock.Index, mergedBlock.Size, len(bytes))
 
 	for i := 0; i < len(compareKeyValues); i++ {
 		if compareKeyValues[i] != mergedKeyValues[i] {
