@@ -114,17 +114,16 @@ func MultiMerge(level *Level, l int) Block {
 	defer writeFD.Close()
 
 	var kvToAdd vars.KeyValue
+	testCnt := 0
 	// multi-merge
 	for {
 		var unitWithSmallestKeyValue *MergeUnit
-		// nextMergeUnits := []MergeUnit{}
 		for i := 0; i < len(mergeUnits); i++ {
 			keyValue, err := mergeUnits[i].Get()
 			if err != nil { // EOF
 				mergeUnits = append(mergeUnits[:i], mergeUnits[i+1:]...)
 				continue
 			}
-			// nextMergeUnits = append(nextMergeUnits, mergeUnits[i])
 			if unitWithSmallestKeyValue != nil {
 				curSmallestKeyValue, _ := unitWithSmallestKeyValue.Get()
 				if curSmallestKeyValue.Key > keyValue.Key {
@@ -137,7 +136,6 @@ func MultiMerge(level *Level, l int) Block {
 		if unitWithSmallestKeyValue == nil { // no more merge units to process
 			break
 		}
-
 		kvToAdd, _ = unitWithSmallestKeyValue.Pop()
 		byteKV := util.KeyValueToByteSlice(kvToAdd)
 		mergeSize += len(byteKV)
@@ -149,9 +147,11 @@ func MultiMerge(level *Level, l int) Block {
 
 			offsetBefore = mergeSize
 		}
+		testCnt++
 		writeFD.Write(byteKV)
-		// mergeUnits = nextMergeUnits
 	}
+
+	fmt.Printf("Wrote %v records\n", testCnt)
 
 	if mergeSparseIndex[len(mergeSparseIndex)-1].Key != kvToAdd.Key {
 		byteKV := util.KeyValueToByteSlice(kvToAdd)
