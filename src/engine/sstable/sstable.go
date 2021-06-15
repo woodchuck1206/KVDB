@@ -78,7 +78,7 @@ func (this *SSTable) Get(key string) (string, error) {
 	return "", vars.GET_FAIL_ERROR
 }
 
-func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) error {
+func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) (int, error) {
 	// order := len(this.levels[0].blocks)
 	// fileName := util.GenerateFileName(0, order)
 	return this.merge(0, keyValuePairs)
@@ -86,7 +86,7 @@ func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) error {
 	// return nil
 }
 
-func (this *SSTable) merge(level int, keyValuePairs []vars.KeyValue) error {
+func (this *SSTable) merge(level int, keyValuePairs []vars.KeyValue) (int, error) {
 	if len(this.levels) <= level {
 		this.levels = append(this.levels, &Level{
 			Blocks: []*Block{},
@@ -97,7 +97,7 @@ func (this *SSTable) merge(level int, keyValuePairs []vars.KeyValue) error {
 	fullPath := util.GetFullPathOf(level, fileName)
 	byteSlice, sparseIndex := util.KeyValueSliceToByteSliceAndSparseIndex(keyValuePairs)
 	if util.WriteByteSlice(fullPath, byteSlice) != nil {
-		return vars.FILE_CREATE_ERROR
+		return -1, vars.FILE_CREATE_ERROR
 	}
 
 	this.levels[level].Blocks = append(this.levels[level].Blocks, &Block{
@@ -107,9 +107,9 @@ func (this *SSTable) merge(level int, keyValuePairs []vars.KeyValue) error {
 	})
 
 	if len(this.levels[level].Blocks) == util.GetMaxBlockSizeOfLevel(level, this.r) {
-		return vars.SS_TBL_LVL_FULL_ERROR // compaction should kick in
+		return level, vars.SS_TBL_LVL_FULL_ERROR // compaction should kick in
 	}
-	return nil
+	return -1, nil
 }
 
 func NewSsTable(r int) *SSTable {
