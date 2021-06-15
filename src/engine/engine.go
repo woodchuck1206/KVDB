@@ -4,7 +4,6 @@ import (
 	"github.com/woodchuckchoi/KVDB/src/engine/memtable"
 	"github.com/woodchuckchoi/KVDB/src/engine/sstable"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
-	// sstable "github.com/woodchuckchoi/KVDB/src/engine/sstable"
 )
 
 var r int = 3

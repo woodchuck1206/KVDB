@@ -105,7 +105,10 @@ func (this *SSTable) merge(level int, keyValuePairs []vars.KeyValue) error {
 		Index:    sparseIndex,
 		Size:     len(byteSlice),
 	})
-	// if the level is full, compaction should kick in at this point
+
+	if len(this.levels[level].Blocks) == util.GetMaxBlockSizeOfLevel(level, this.r) {
+		return vars.SS_TBL_LVL_FULL_ERROR // compaction should kick in
+	}
 	return nil
 }
 

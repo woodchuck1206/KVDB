@@ -9,7 +9,7 @@ import (
 )
 
 type Compactor struct {
-	Receiver <-chan MergeSignal
+	Receiver chan MergeSignal
 }
 
 type MergeSignal struct {
@@ -74,12 +74,12 @@ func (this *MergeUnit) Pop() (vars.KeyValue, error) {
 	return ret, err
 }
 
-func NewCompactor(chanBuffer int) (*Compactor, chan<- MergeSignal) {
+func NewCompactor(chanBuffer int) Compactor {
 	if chanBuffer <= 0 {
 		chanBuffer = 42 // arbitrary default number for MergeSignal buffer size
 	}
 	channel := make(chan MergeSignal, chanBuffer)
-	return &Compactor{Receiver: channel}, channel
+	return Compactor{Receiver: channel}
 }
 
 func MultiMerge(level *Level, l int) Block {

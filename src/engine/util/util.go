@@ -181,3 +181,15 @@ func GetFullPathOf(level int, fileName string) string {
 func RemoveFile(fileName string) {
 	os.Remove(fileName)
 }
+
+func GetMaxBlockSizeOfLevel(level, r int) int {
+	return positiveIntPow(r, level+1)
+}
+
+func positiveIntPow(r, n int) int {
+	ret := 1
+	for i := 0; i < n; i++ {
+		ret *= r
+	}
+	return ret
+}

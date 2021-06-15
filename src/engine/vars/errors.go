@@ -17,4 +17,6 @@ var (
 
 	MEM_TBL_FULL_ERROR  = errors.New("MEM TABLE FULL")
 	KEY_NOT_FOUND_ERROR = errors.New("KEY NOT FOUND")
+
+	SS_TBL_LVL_FULL_ERROR = errors.New("SS TABLE LEVEL FULL")
 )
