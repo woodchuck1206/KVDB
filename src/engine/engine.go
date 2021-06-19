@@ -22,7 +22,10 @@ type Memtable interface {
 
 type SStable interface {
 	Get(string) (string, error)
-	L0Merge([]vars.KeyValue) (int, error)
+	// L0Merge([]vars.KeyValue) (int, error)
+	Merge(int, []vars.KeyValue) (int, error)
+	MergeBlock(int, sstable.Block) (int, error)
+	GetSelf() *sstable.SSTable
 }
 
 func NewEngine(memTableThresholdSize, r int) *Engine {
@@ -31,6 +34,25 @@ func NewEngine(memTableThresholdSize, r int) *Engine {
 		ssTable:   sstable.NewSsTable(r),
 		compactor: sstable.NewCompactor(0),
 	}
+}
+
+func (this *Engine) Compact(level int) sstable.Block {
+	mergedBlockReceiver := make(chan sstable.Block)
+	mergeSignal := sstable.MergeSignal{
+		Level:    level,
+		LevelRef: this.ssTable.GetSelf(),
+		Returner: mergedBlockReceiver,
+	}
+
+	this.compactor.Receive(mergeSignal)
+
+	var mergedBlock sstable.Block
+
+	select {
+	case received := <-mergedBlockReceiver:
+		mergedBlock = received
+	}
+	return mergedBlock
 }
 
 func (this *Engine) Get(key string) (string, error) {
@@ -51,16 +73,15 @@ func (this *Engine) Put(key, value string) error {
 
 	if err == vars.MEM_TBL_FULL_ERROR {
 		flushedMemtable := this.memTable.Flush()
-		targetLevel, err = this.ssTable.L0Merge(flushedMemtable) // should keep the old memtable till the job finishes
+		// targetLevel, err = this.ssTable.L0Merge(flushedMemtable) // should keep the old memtable till the job finishes
+		targetLevel, err = this.ssTable.Merge(0, flushedMemtable)
 	}
 
-	if err == vars.SS_TBL_LVL_FULL_ERROR {
-		mergeSignal := sstable.MergeSignal {
-			Level: targetLevel,
-			// compaction should occur recursively too
-			
-		}
-		this.compactor.Receiver <- 
+	for err == vars.SS_TBL_LVL_FULL_ERROR {
+		mergedBlock := this.Compact(targetLevel) // do it sequentially, refactor it to run concurrent later
+		targetLevel++
+		targetLevel, err = this.ssTable.MergeBlock(targetLevel, mergedBlock) // does it recursively
+		// targetLevel, err = this.ssTable.Merge(targetLevel, )
 	}
 
 	return err

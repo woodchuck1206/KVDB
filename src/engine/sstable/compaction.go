@@ -15,6 +15,7 @@ type Compactor struct {
 type MergeSignal struct {
 	Level    int
 	LevelRef *SSTable
+	Returner chan<- Block
 }
 
 type MergeUnit struct { // per Block
@@ -79,7 +80,26 @@ func NewCompactor(chanBuffer int) Compactor {
 		chanBuffer = 42 // arbitrary default number for MergeSignal buffer size
 	}
 	channel := make(chan MergeSignal, chanBuffer)
-	return Compactor{Receiver: channel}
+	compactor := Compactor{Receiver: channel}
+	compactor.Run()
+	return compactor
+}
+
+func (this Compactor) Run() {
+	go func() {
+		for {
+			select {
+			case mergeSignal := <-this.Receiver:
+				mergedBlock := MultiMerge(mergeSignal.LevelRef.levels[mergeSignal.Level], mergeSignal.Level)
+				mergeSignal.Returner <- mergedBlock
+				close(mergeSignal.Returner)
+			}
+		}
+	}()
+}
+
+func (this Compactor) Receive(mergeSignal MergeSignal) {
+	this.Receiver <- mergeSignal
 }
 
 func MultiMerge(level *Level, l int) Block {

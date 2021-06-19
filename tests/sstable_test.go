@@ -27,7 +27,8 @@ func TestSSTable(t *testing.T) {
 		{Key: "humongous", Value: "shepherd pie"},
 		{Key: "zealous", Value: "pioneers"},
 	}
-	testTable.L0Merge(testData)
+	testTable.Merge(0, testData)
+	// testTable.L0Merge(testData)
 	checkData := []checkData{
 		{"abraham", true},
 		{"guacamole", false},

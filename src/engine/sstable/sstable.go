@@ -78,15 +78,27 @@ func (this *SSTable) Get(key string) (string, error) {
 	return "", vars.GET_FAIL_ERROR
 }
 
+func (this *SSTable) GetSelf() *SSTable {
+	return this
+}
+
 func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) (int, error) {
 	// order := len(this.levels[0].blocks)
 	// fileName := util.GenerateFileName(0, order)
-	return this.merge(0, keyValuePairs)
+	return this.Merge(0, keyValuePairs)
 	// util.WriteKeyValuePairs()
 	// return nil
 }
 
-func (this *SSTable) merge(level int, keyValuePairs []vars.KeyValue) (int, error) {
+func (this *SSTable) MergeBlock(level int, block Block) (int, error) {
+	this.levels[level].Blocks = append(this.levels[level].Blocks, &block)
+	if len(this.levels[level].Blocks) == util.GetMaxBlockSizeOfLevel(level, this.r) {
+		return level, vars.SS_TBL_LVL_FULL_ERROR
+	}
+	return -1, nil
+}
+
+func (this *SSTable) Merge(level int, keyValuePairs []vars.KeyValue) (int, error) {
 	if len(this.levels) <= level {
 		this.levels = append(this.levels, &Level{
 			Blocks: []*Block{},
