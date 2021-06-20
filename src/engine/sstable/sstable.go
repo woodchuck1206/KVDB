@@ -91,7 +91,8 @@ func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) (int, error) {
 }
 
 func (this *SSTable) MergeBlock(level int, block Block) (int, error) {
-	this.levels[level].Blocks = append(this.levels[level].Blocks, &block)
+	this.levels[level].Blocks = append([]*Block{&block}, this.levels[level].Blocks...)
+	// this.levels[level].Blocks = append(this.levels[level].Blocks, &block)
 	if len(this.levels[level].Blocks) == util.GetMaxBlockSizeOfLevel(level, this.r) {
 		return level, vars.SS_TBL_LVL_FULL_ERROR
 	}
@@ -112,11 +113,19 @@ func (this *SSTable) Merge(level int, keyValuePairs []vars.KeyValue) (int, error
 		return -1, vars.FILE_CREATE_ERROR
 	}
 
-	this.levels[level].Blocks = append(this.levels[level].Blocks, &Block{
+	newBlock := Block{
 		FileName: fullPath,
 		Index:    sparseIndex,
 		Size:     len(byteSlice),
-	})
+	}
+
+	this.levels[level].Blocks = append([]*Block{&newBlock}, this.levels[level].Blocks...)
+
+	// this.levels[level].Blocks = append(this.levels[level].Blocks, &Block{
+	// 	FileName: fullPath,
+	// 	Index:    sparseIndex,
+	// 	Size:     len(byteSlice),
+	// })
 
 	if len(this.levels[level].Blocks) == util.GetMaxBlockSizeOfLevel(level, this.r) {
 		return level, vars.SS_TBL_LVL_FULL_ERROR // compaction should kick in
