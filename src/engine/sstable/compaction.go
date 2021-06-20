@@ -149,6 +149,11 @@ func MultiMerge(level *Level, l int) Block {
 				continue
 			}
 
+			// earlier blocks are more recent
+			// compaction overwrite
+			// tombstone delete
+			// should be implemented
+
 			if unitWithSmallestKeyValue != nil {
 				curSmallestKeyValue, _ := unitWithSmallestKeyValue.Get()
 				if curSmallestKeyValue.Key > keyValue.Key {

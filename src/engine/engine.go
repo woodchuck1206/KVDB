@@ -64,6 +64,11 @@ func (this *Engine) Get(key string) (string, error) {
 	if err != nil {
 		value, err = this.ssTable.Get(key)
 	}
+
+	if err == nil && value == vars.TOMBSTONE {
+		err = vars.GET_FAIL_ERROR
+	}
+
 	return value, err
 }
 
@@ -85,4 +90,8 @@ func (this *Engine) Put(key, value string) error {
 	}
 
 	return err
+}
+
+func (this *Engine) Delete(key string) error {
+	return this.Put(key, vars.TOMBSTONE)
 }
