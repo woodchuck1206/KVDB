@@ -94,19 +94,31 @@ func TestCompaction(t *testing.T) {
 	sort.Slice(compareKeyValues, func(i, j int) bool {
 		if compareKeyValues[i].Key < compareKeyValues[j].Key {
 			return true
+		} else if compareKeyValues[i].Key == compareKeyValues[j].Key && i < j {
+			return true
 		}
 		return false
 	})
 
-	if len(compareKeyValues) != len(mergedKeyValues) {
-		t.Error("Length Not Match", len(compareKeyValues), len(mergedKeyValues))
+	var before vars.KeyValue = compareKeyValues[0]
+	overwritten := []vars.KeyValue{before}
+	for i := 1; i < len(compareKeyValues); i++ {
+		if compareKeyValues[i].Key == before.Key {
+			continue
+		}
+		before = compareKeyValues[i]
+		overwritten = append(overwritten, before)
+	}
+
+	if len(overwritten) != len(mergedKeyValues) {
+		t.Error("Length Not Match", len(overwritten), len(mergedKeyValues))
 	}
 
 	t.Logf("Merged Index: %v\nMerged Size: %v\nBytes Size: %v\n", mergedBlock.Index, mergedBlock.Size, len(bytes))
 
 	for i := 0; i < len(compareKeyValues); i++ {
-		if compareKeyValues[i] != mergedKeyValues[i] {
-			t.Errorf("\n%vth Comparison\nOriginal: %v\nMerged: %v", i, compareKeyValues[i], mergedKeyValues[i])
+		if overwritten[i] != mergedKeyValues[i] {
+			t.Errorf("\n%vth Comparison\nOriginal: %v\nMerged: %v", i, overwritten[i], mergedKeyValues[i])
 		}
 	}
 

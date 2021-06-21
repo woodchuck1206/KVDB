@@ -136,8 +136,9 @@ func MultiMerge(level *Level, l int) Block {
 	var kvToAdd vars.KeyValue
 	// multi-merge
 	for {
-		var unitWithSmallestKeyValue *MergeUnit = nil
+		unitsWithSmallestKeys := []*MergeUnit{}
 		idx := 0
+
 		for {
 			if idx >= len(mergeUnits) {
 				break
@@ -151,25 +152,35 @@ func MultiMerge(level *Level, l int) Block {
 
 			// earlier blocks are more recent
 			// compaction overwrite
-			// tombstone delete
-			// should be implemented
 
-			if unitWithSmallestKeyValue != nil {
-				curSmallestKeyValue, _ := unitWithSmallestKeyValue.Get()
+			if len(unitsWithSmallestKeys) != 0 {
+
+				curSmallestKeyValue, _ := unitsWithSmallestKeys[0].Get()
+
 				if curSmallestKeyValue.Key > keyValue.Key {
-					unitWithSmallestKeyValue = &(mergeUnits[idx])
+					unitsWithSmallestKeys = []*MergeUnit{&mergeUnits[idx]}
+				} else if curSmallestKeyValue.Key == keyValue.Key {
+					unitsWithSmallestKeys = append(unitsWithSmallestKeys, &mergeUnits[idx])
 				}
-			} else { // unitWithSmallestKeyValue == nil
-				unitWithSmallestKeyValue = &mergeUnits[idx]
+
+			} else { // len(unitsWithSmallestKeys) == 0
+				unitsWithSmallestKeys = []*MergeUnit{&mergeUnits[idx]}
 			}
 			idx++
 		}
 
-		if unitWithSmallestKeyValue == nil { // no more merge units to process
+		if len(unitsWithSmallestKeys) == 0 { // no more merge units to process
 			break
 		}
 
-		kvToAdd, _ = unitWithSmallestKeyValue.Pop()
+		for idx, unitWithSmallestKey := range unitsWithSmallestKeys {
+			if idx == 0 { // only take the most recent data
+				kvToAdd, _ = unitWithSmallestKey.Pop()
+			} else { // discard the other ones
+				_, _ = unitWithSmallestKey.Pop()
+			}
+		}
+
 		byteKV := util.KeyValueToByteSlice(kvToAdd)
 		mergeSize += len(byteKV)
 
