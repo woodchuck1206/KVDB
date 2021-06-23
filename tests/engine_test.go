@@ -42,7 +42,7 @@ func TestPutGetDelete(t *testing.T) {
 		curActionSelector := rand.Intn(3)
 		var err error
 		var valueFromEngine string
-
+		t.Logf("%04dth run %v key: %v value: %v\n", i, curActionSelector, key, value)
 		switch curActionSelector {
 		case 0:
 			err = e.Put(key, value)
