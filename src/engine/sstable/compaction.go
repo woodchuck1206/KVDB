@@ -150,9 +150,6 @@ func MultiMerge(level *Level, l int) Block {
 				continue
 			}
 
-			// earlier blocks are more recent
-			// compaction overwrite
-
 			if len(unitsWithSmallestKeys) != 0 {
 
 				curSmallestKeyValue, _ := unitsWithSmallestKeys[0].Get()
