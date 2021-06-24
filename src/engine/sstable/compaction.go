@@ -48,7 +48,6 @@ func (this *MergeUnit) Load() {
 	this.SparseIdx++
 
 	buffer := make([]byte, curBufferSize)
-
 	this.File.Read(buffer)
 	this.KeyValue = util.ByteSliceToKeyValue(buffer)
 }
@@ -59,6 +58,7 @@ func (this *MergeUnit) Get() (vars.KeyValue, error) {
 	if len(this.KeyValue) == 0 {
 		this.Load()
 	}
+
 	if this.Finish {
 		return ret, vars.FILE_EOF_ERROR
 	}

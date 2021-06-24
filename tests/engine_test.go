@@ -42,7 +42,6 @@ func TestPutGetDelete(t *testing.T) {
 		curActionSelector := rand.Intn(3)
 		var err error
 		var valueFromEngine string
-		t.Logf("%04dth run %v key: %v value: %v\n", i, curActionSelector, key, value)
 		switch curActionSelector {
 		case 0:
 			err = e.Put(key, value)
@@ -52,9 +51,9 @@ func TestPutGetDelete(t *testing.T) {
 			valueFromEngine, err = e.Get(key)
 			valueFromMap, ok := record[key]
 			if err == vars.GET_FAIL_ERROR && ok {
-				t.Errorf("%v does not exist in DB!\n", key)
+				t.Errorf("%vth run! %v should exist in DB! EngineValue: %v MapValue: %v\n", i, key, valueFromEngine, valueFromMap)
 			}
-			if valueFromEngine != valueFromMap {
+			if err != vars.GET_FAIL_ERROR && valueFromEngine != valueFromMap {
 				t.Errorf("%v value does not match\nDB: %v\nMAP: %v\n", key, valueFromEngine, valueFromMap)
 			}
 			break

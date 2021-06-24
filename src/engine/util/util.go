@@ -3,7 +3,6 @@ package util
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"time"
@@ -19,7 +18,7 @@ type CompactionTarget interface {
 
 const (
 	BASE_DIR = "/tmp/gokvdb"
-	TIME_FMT = "2006-01-02T15:04:05"
+	TIME_FMT = "2006-01-02T15:04:05.000000"
 )
 
 func GetSparseIndexSize(compactionTarget CompactionTarget) int {
@@ -116,7 +115,7 @@ func WriteKeyValuePairs(fileName string, keyValuePairs []vars.KeyValue) error {
 }
 
 func WriteByteSlice(fileName string, byteSlice []byte) error {
-	err := ioutil.WriteFile(fileName, byteSlice, 0777)
+	err := os.WriteFile(fileName, byteSlice, 0666)
 	if err != nil {
 		return vars.FILE_CREATE_ERROR
 	}

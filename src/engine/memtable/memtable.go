@@ -43,8 +43,13 @@ func (this *Memtable) Get(key string) (string, error) {
 
 func (this *Memtable) Flush() []vars.KeyValue {
 	toFlush := this.tree.Flush()
-	this.tree = rbtree.NewTree()
+	this.reborn()
 	return toFlush
+}
+
+func (this *Memtable) reborn() {
+	this.tree = rbtree.NewTree()
+	this.size = 0
 }
 
 func varToSize(vars ...string) int {

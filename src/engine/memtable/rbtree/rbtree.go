@@ -24,11 +24,11 @@ type Node struct {
 }
 
 func (this *Node) Get(key string) (string, error) {
-	if this.key == key {
-		return this.value, nil
-	}
 	if this == nil {
 		return "", vars.GET_FAIL_ERROR
+	}
+	if this.key == key {
+		return this.value, nil
 	}
 
 	if this.key < key {

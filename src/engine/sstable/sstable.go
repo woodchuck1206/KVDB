@@ -91,7 +91,14 @@ func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) (int, error) {
 }
 
 func (this *SSTable) MergeBlock(level int, block Block) (int, error) {
-	this.levels[level].Blocks = append([]*Block{&block}, this.levels[level].Blocks...)
+	if level == len(this.levels) {
+		newLevel := &Level{
+			Blocks: []*Block{&block},
+		}
+		this.levels = append(this.levels, newLevel)
+	} else {
+		this.levels[level].Blocks = append([]*Block{&block}, this.levels[level].Blocks...)
+	}
 	// this.levels[level].Blocks = append(this.levels[level].Blocks, &block)
 	if len(this.levels[level].Blocks) == util.GetMaxBlockSizeOfLevel(level, this.r) {
 		return level, vars.SS_TBL_LVL_FULL_ERROR
@@ -105,7 +112,6 @@ func (this *SSTable) Merge(level int, keyValuePairs []vars.KeyValue) (int, error
 			Blocks: []*Block{},
 		})
 	}
-
 	fileName := util.GenerateFileName(level)
 	fullPath := util.GetFullPathOf(level, fileName)
 	byteSlice, sparseIndex := util.KeyValueSliceToByteSliceAndSparseIndex(keyValuePairs)
@@ -120,7 +126,6 @@ func (this *SSTable) Merge(level int, keyValuePairs []vars.KeyValue) (int, error
 	}
 
 	this.levels[level].Blocks = append([]*Block{&newBlock}, this.levels[level].Blocks...)
-
 	// this.levels[level].Blocks = append(this.levels[level].Blocks, &Block{
 	// 	FileName: fullPath,
 	// 	Index:    sparseIndex,
