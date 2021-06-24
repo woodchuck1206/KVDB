@@ -9,6 +9,16 @@ import (
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
+func TestUnhappy(t *testing.T) {
+	rbtree := rbtree.NewTree()
+
+	nonExistKey := "emptyTree"
+	val, err := rbtree.Get(nonExistKey)
+	if err != vars.GET_FAIL_ERROR {
+		t.Errorf("%v : %v should not exist!\n", nonExistKey, val)
+	}
+}
+
 func TestRedBlackTree(t *testing.T) {
 	rbtree := rbtree.NewTree()
 
