@@ -124,8 +124,8 @@ func MultiMerge(level *Level, l int) Block {
 		}
 	}
 
-	fileName := util.GenerateFileName(l)
-	fullPath := util.GetFullPathOf(l, fileName)
+	fileName := util.GenerateFileName(l + 1)
+	fullPath := util.GetFullPathOf(l+1, fileName)
 	writeFD, err := os.Create(fullPath)
 	if err != nil {
 		fmt.Println("NOT ABLE TO MAKE A FILE!", err)

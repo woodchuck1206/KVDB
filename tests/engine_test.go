@@ -9,6 +9,12 @@ import (
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
+type Log struct {
+	i     int
+	key   string
+	value string
+}
+
 const (
 	keyLength   = 3 // to make it more likely to produce duplicate values
 	valueLength = 20
@@ -45,26 +51,40 @@ func TestPutGetDelete(t *testing.T) {
 		switch curActionSelector {
 		case 0:
 			err = e.Put(key, value)
+			if err != nil {
+				t.Error(err)
+			}
+			t.Logf("%05d PUT KEY: %v VALUE: %v\n", i, key, value)
+			freshValue, err := e.Get(key)
+			if err != nil {
+				t.Error(err)
+			}
+			if freshValue != value {
+				t.Logf("FreshValue Mismatch! VALUE SHOULD BE %v, BUT %v\n", value, freshValue)
+			}
 			record[key] = value
 			break
 		case 1:
 			valueFromEngine, err = e.Get(key)
+			t.Logf("%05d GET KEY: %v VALUE: %v\n", i, key, valueFromEngine)
 			valueFromMap, ok := record[key]
 			if err == vars.GET_FAIL_ERROR && ok {
+				e.Status()
 				t.Errorf("%vth run! %v should exist in DB! EngineValue: %v MapValue: %v\n", i, key, valueFromEngine, valueFromMap)
 			}
 			if err != vars.GET_FAIL_ERROR && valueFromEngine != valueFromMap {
+				e.Status()
 				t.Errorf("%v value does not match\nDB: %v\nMAP: %v\n", key, valueFromEngine, valueFromMap)
 			}
 			break
 		case 2:
+			t.Logf("%05d DEL KEY: %v \n", i, key)
 			err = e.Delete(key)
 			delete(record, key)
 			break
 		}
 
 	}
-
 }
 
 // func TestCompaction(t *testing.T) {

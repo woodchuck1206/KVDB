@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"fmt"
+
 	"github.com/woodchuckchoi/KVDB/src/engine/memtable"
 	"github.com/woodchuckchoi/KVDB/src/engine/sstable"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
@@ -18,6 +20,7 @@ type Memtable interface {
 	Put(string, string) error
 	Get(string) (string, error)
 	Flush() []vars.KeyValue
+	Show() []vars.KeyValue
 }
 
 type SStable interface {
@@ -77,12 +80,14 @@ func (this *Engine) Put(key, value string) error {
 	err := this.memTable.Put(key, value)
 
 	if err == vars.MEM_TBL_FULL_ERROR {
+		fmt.Println("MEM TABLE FULL!")
 		flushedMemtable := this.memTable.Flush()
 		// targetLevel, err = this.ssTable.L0Merge(flushedMemtable) // should keep the old memtable till the job finishes
 		targetLevel, err = this.ssTable.Merge(0, flushedMemtable)
 	}
 
 	for err == vars.SS_TBL_LVL_FULL_ERROR {
+		fmt.Println("SS TABLE FULL!")
 		mergedBlock := this.Compact(targetLevel) // do it sequentially, refactor it to run concurrent later
 		targetLevel++
 		targetLevel, err = this.ssTable.MergeBlock(targetLevel, mergedBlock) // does it recursively
@@ -94,4 +99,9 @@ func (this *Engine) Put(key, value string) error {
 
 func (this *Engine) Delete(key string) error {
 	return this.Put(key, vars.TOMBSTONE)
+}
+
+func (this *Engine) Status() {
+	fmt.Println(this.memTable.Show())
+	this.ssTable.GetSelf().Status()
 }

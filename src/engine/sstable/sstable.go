@@ -1,6 +1,8 @@
 package sstable
 
 import (
+	"fmt"
+
 	"github.com/woodchuckchoi/KVDB/src/engine/util"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
@@ -136,6 +138,17 @@ func (this *SSTable) Merge(level int, keyValuePairs []vars.KeyValue) (int, error
 		return level, vars.SS_TBL_LVL_FULL_ERROR // compaction should kick in
 	}
 	return -1, nil
+}
+
+func (this *SSTable) Status() {
+	for idx, level := range this.levels {
+		fmt.Printf("Level %v [", idx)
+		for _, b := range level.Blocks {
+			fmt.Printf("%v, ", b.FileName)
+		}
+
+		fmt.Printf("]\n")
+	}
 }
 
 func NewSsTable(r int) *SSTable {

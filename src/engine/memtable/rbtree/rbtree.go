@@ -32,9 +32,9 @@ func (this *Node) Get(key string) (string, error) {
 	}
 
 	if this.key < key {
-		return this.left.Get(key)
+		return this.right.Get(key)
 	}
-	return this.right.Get(key)
+	return this.left.Get(key)
 }
 
 func nodeColour(node *Node) colour {

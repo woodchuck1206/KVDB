@@ -47,6 +47,10 @@ func (this *Memtable) Flush() []vars.KeyValue {
 	return toFlush
 }
 
+func (this *Memtable) Show() []vars.KeyValue {
+	return this.tree.Flush()
+}
+
 func (this *Memtable) reborn() {
 	this.tree = rbtree.NewTree()
 	this.size = 0
