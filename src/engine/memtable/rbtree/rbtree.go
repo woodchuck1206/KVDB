@@ -118,7 +118,7 @@ func (this *RedBlackTree) Put(key string, value string) error {
 		y.right = node
 	} else { // if key == y.key, overwrite the value. + Tombstone will be a special string
 		y.value = value
-		return nil
+		// return nil
 	}
 	if node.parent == nil {
 		node.colour = black
