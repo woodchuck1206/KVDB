@@ -5,6 +5,7 @@ import (
 
 	"github.com/woodchuckchoi/KVDB/src/engine/memtable"
 	"github.com/woodchuckchoi/KVDB/src/engine/sstable"
+	"github.com/woodchuckchoi/KVDB/src/engine/util"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
@@ -29,6 +30,7 @@ type SStable interface {
 	Merge(int, []vars.KeyValue) (int, error)
 	MergeBlock(int, sstable.Block) (int, error)
 	GetSelf() *sstable.SSTable
+	GetFilesOfLevel(int) []string
 }
 
 func NewEngine(memTableThresholdSize, r int) *Engine {
@@ -39,7 +41,7 @@ func NewEngine(memTableThresholdSize, r int) *Engine {
 	}
 }
 
-func (this *Engine) Compact(level int) sstable.Block {
+func (this *Engine) Compact(level int) (sstable.Block, []string) {
 	mergedBlockReceiver := make(chan sstable.Block)
 	mergeSignal := sstable.MergeSignal{
 		Level:    level,
@@ -48,6 +50,7 @@ func (this *Engine) Compact(level int) sstable.Block {
 	}
 
 	this.compactor.Receive(mergeSignal)
+	toCollect := this.ssTable.GetFilesOfLevel(level)
 
 	var mergedBlock sstable.Block
 
@@ -55,7 +58,7 @@ func (this *Engine) Compact(level int) sstable.Block {
 	case received := <-mergedBlockReceiver:
 		mergedBlock = received
 	}
-	return mergedBlock
+	return mergedBlock, toCollect
 }
 
 func (this *Engine) Get(key string) (string, error) {
@@ -82,16 +85,18 @@ func (this *Engine) Put(key, value string) error {
 	if err == vars.MEM_TBL_FULL_ERROR {
 		fmt.Println("MEM TABLE FULL!")
 		flushedMemtable := this.memTable.Flush()
-		// targetLevel, err = this.ssTable.L0Merge(flushedMemtable) // should keep the old memtable till the job finishes
 		targetLevel, err = this.ssTable.Merge(0, flushedMemtable)
 	}
 
 	for err == vars.SS_TBL_LVL_FULL_ERROR {
 		fmt.Println("SS TABLE FULL!")
-		mergedBlock := this.Compact(targetLevel) // do it sequentially, refactor it to run concurrent later
+		mergedBlock, toCollect := this.Compact(targetLevel) // do it sequentially, refactor it to run concurrent later
 		targetLevel++
-		targetLevel, err = this.ssTable.MergeBlock(targetLevel, mergedBlock) // does it recursively
-		// targetLevel, err = this.ssTable.Merge(targetLevel, )
+		targetLevel, err = this.ssTable.MergeBlock(targetLevel, mergedBlock)
+
+		for _, collect := range toCollect {
+			util.RemoveFile(collect)
+		}
 	}
 
 	return err

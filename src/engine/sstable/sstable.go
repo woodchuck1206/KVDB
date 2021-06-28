@@ -151,6 +151,17 @@ func (this *SSTable) Status() {
 	}
 }
 
+func (this *SSTable) GetFilesOfLevel(level int) []string {
+	ret := []string{}
+	if level >= len(this.levels) {
+		return ret
+	}
+	for _, block := range this.levels[level].Blocks {
+		ret = append(ret, block.FileName)
+	}
+	return ret
+}
+
 func NewSsTable(r int) *SSTable {
 	return &SSTable{
 		r:      r,
