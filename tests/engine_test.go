@@ -61,6 +61,8 @@ func TestPutGetDelete(t *testing.T) {
 			}
 			if freshValue != value {
 				t.Logf("FreshValue Mismatch! VALUE SHOULD BE %v, BUT %v\n", value, freshValue)
+				e.Status()
+				t.FailNow()
 			}
 			record[key] = value
 			break

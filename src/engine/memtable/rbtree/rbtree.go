@@ -1,6 +1,7 @@
 package rbtree
 
 import (
+	"github.com/woodchuckchoi/KVDB/src/engine/util"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
@@ -80,7 +81,7 @@ func (this *RedBlackTree) Get(key string) (string, error) {
 	return node.Get(key)
 }
 
-func (this *RedBlackTree) Put(key string, value string) error {
+func (this *RedBlackTree) Put(key string, value string) (error, int) {
 	defer func() error {
 		var ret error = nil
 		if err := recover(); err != nil {
@@ -104,10 +105,15 @@ func (this *RedBlackTree) Put(key string, value string) error {
 		y = x
 		if key < x.key {
 			x = x.left
-		} else {
+		} else if key > x.key {
 			x = x.right
+		} else { // key == x.key
+			x.value = value
+			return nil, len(value) - len(x.value)
 		}
 	}
+
+	sizeChange := util.VarToSize(key, value)
 
 	node.parent = y
 	if y == nil {
@@ -122,13 +128,13 @@ func (this *RedBlackTree) Put(key string, value string) error {
 	}
 	if node.parent == nil {
 		node.colour = black
-		return nil
+		return nil, sizeChange
 	}
 	if node.parent.parent == nil {
-		return nil
+		return nil, sizeChange
 	}
 	this.insertFix1(node)
-	return nil
+	return nil, sizeChange
 }
 
 func (this *RedBlackTree) insertFix1(node *Node) {

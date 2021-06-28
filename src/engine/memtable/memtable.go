@@ -1,7 +1,7 @@
 package memtable
 
 import (
-	rbtree "github.com/woodchuckchoi/KVDB/src/engine/memtable/rbtree"
+	"github.com/woodchuckchoi/KVDB/src/engine/memtable/rbtree"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
@@ -13,7 +13,7 @@ type Memtable struct {
 
 type Tree interface {
 	Get(key string) (string, error)
-	Put(key, value string) error
+	Put(key, value string) (error, int)
 	Flush() []vars.KeyValue
 }
 
@@ -26,10 +26,12 @@ func NewMemtable(threshold int) *Memtable {
 }
 
 func (this *Memtable) Put(key, value string) error {
-	if err := this.tree.Put(key, value); err != nil {
+	err, sizeChange := this.tree.Put(key, value)
+	if err != nil {
 		return err
 	}
-	this.size += varToSize(key, value)
+
+	this.size += sizeChange
 	if this.size >= this.threshold { //
 		return vars.MEM_TBL_FULL_ERROR
 		// memtable.sstb.Merge(memtable.flush())
@@ -54,12 +56,4 @@ func (this *Memtable) Show() []vars.KeyValue {
 func (this *Memtable) reborn() {
 	this.tree = rbtree.NewTree()
 	this.size = 0
-}
-
-func varToSize(vars ...string) int {
-	ret := 0
-	for _, v := range vars {
-		ret += len(v)
-	}
-	return ret
 }

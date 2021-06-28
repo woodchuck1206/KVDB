@@ -192,3 +192,11 @@ func positiveIntPow(r, n int) int {
 	}
 	return ret
 }
+
+func VarToSize(vars ...string) int {
+	ret := 0
+	for _, v := range vars {
+		ret += len(v)
+	}
+	return ret
+}
