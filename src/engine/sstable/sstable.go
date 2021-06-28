@@ -92,6 +92,15 @@ func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) (int, error) {
 	// return nil
 }
 
+func (this *SSTable) Cleanse(level int) {
+	if level >= 0 && level < len(this.levels) {
+		for _, block := range this.levels[level].Blocks {
+			util.RemoveFile(block.FileName)
+		}
+		this.levels[level].Blocks = []*Block{}
+	}
+}
+
 func (this *SSTable) MergeBlock(level int, block Block) (int, error) {
 	if level == len(this.levels) {
 		newLevel := &Level{
@@ -101,6 +110,7 @@ func (this *SSTable) MergeBlock(level int, block Block) (int, error) {
 	} else {
 		this.levels[level].Blocks = append([]*Block{&block}, this.levels[level].Blocks...)
 	}
+
 	// this.levels[level].Blocks = append(this.levels[level].Blocks, &block)
 	if len(this.levels[level].Blocks) == util.GetMaxBlockSizeOfLevel(level, this.r) {
 		return level, vars.SS_TBL_LVL_FULL_ERROR
@@ -149,17 +159,6 @@ func (this *SSTable) Status() {
 
 		fmt.Printf("]\n")
 	}
-}
-
-func (this *SSTable) GetFilesOfLevel(level int) []string {
-	ret := []string{}
-	if level >= len(this.levels) {
-		return ret
-	}
-	for _, block := range this.levels[level].Blocks {
-		ret = append(ret, block.FileName)
-	}
-	return ret
 }
 
 func NewSsTable(r int) *SSTable {

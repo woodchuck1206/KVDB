@@ -5,7 +5,6 @@ import (
 
 	"github.com/woodchuckchoi/KVDB/src/engine/memtable"
 	"github.com/woodchuckchoi/KVDB/src/engine/sstable"
-	"github.com/woodchuckchoi/KVDB/src/engine/util"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
 
@@ -30,7 +29,7 @@ type SStable interface {
 	Merge(int, []vars.KeyValue) (int, error)
 	MergeBlock(int, sstable.Block) (int, error)
 	GetSelf() *sstable.SSTable
-	GetFilesOfLevel(int) []string
+	Cleanse(int)
 }
 
 func NewEngine(memTableThresholdSize, r int) *Engine {
@@ -41,7 +40,7 @@ func NewEngine(memTableThresholdSize, r int) *Engine {
 	}
 }
 
-func (this *Engine) Compact(level int) (sstable.Block, []string) {
+func (this *Engine) Compact(level int) sstable.Block {
 	mergedBlockReceiver := make(chan sstable.Block)
 	mergeSignal := sstable.MergeSignal{
 		Level:    level,
@@ -50,7 +49,6 @@ func (this *Engine) Compact(level int) (sstable.Block, []string) {
 	}
 
 	this.compactor.Receive(mergeSignal)
-	toCollect := this.ssTable.GetFilesOfLevel(level)
 
 	var mergedBlock sstable.Block
 
@@ -58,7 +56,7 @@ func (this *Engine) Compact(level int) (sstable.Block, []string) {
 	case received := <-mergedBlockReceiver:
 		mergedBlock = received
 	}
-	return mergedBlock, toCollect
+	return mergedBlock
 }
 
 func (this *Engine) Get(key string) (string, error) {
@@ -90,13 +88,11 @@ func (this *Engine) Put(key, value string) error {
 
 	for err == vars.SS_TBL_LVL_FULL_ERROR {
 		fmt.Println("SS TABLE FULL!")
-		mergedBlock, toCollect := this.Compact(targetLevel) // do it sequentially, refactor it to run concurrent later
-		targetLevel++
-		targetLevel, err = this.ssTable.MergeBlock(targetLevel, mergedBlock)
-
-		for _, collect := range toCollect {
-			util.RemoveFile(collect)
-		}
+		mergedBlock := this.Compact(targetLevel) // do it sequentially, refactor it to run concurrent later
+		nextTargetLevel, nextErr := this.ssTable.MergeBlock(targetLevel+1, mergedBlock)
+		this.ssTable.Cleanse(targetLevel)
+		targetLevel = nextTargetLevel
+		err = nextErr
 	}
 
 	return err
