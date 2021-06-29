@@ -30,6 +30,7 @@ type SStable interface {
 	MergeBlock(int, sstable.Block) (int, error)
 	GetSelf() *sstable.SSTable
 	Cleanse(int)
+	CleanAll()
 }
 
 func NewEngine(memTableThresholdSize, r int) *Engine {
@@ -65,8 +66,10 @@ func (this *Engine) Get(key string) (string, error) {
 		err   error
 	)
 	value, err = this.memTable.Get(key)
+	fmt.Println("FINDING IN MEMTABLE", value, err)
 	if err != nil {
 		value, err = this.ssTable.Get(key)
+		fmt.Println("FINDING IN SSTABLE", value, err)
 	}
 
 	if err == nil && value == vars.TOMBSTONE {
@@ -79,6 +82,7 @@ func (this *Engine) Get(key string) (string, error) {
 func (this *Engine) Put(key, value string) error {
 	targetLevel := -1
 	err := this.memTable.Put(key, value)
+	fmt.Println("INSERTING IN MEMTABLE", err)
 
 	if err == vars.MEM_TBL_FULL_ERROR {
 		fmt.Println("MEM TABLE FULL!")
@@ -105,4 +109,8 @@ func (this *Engine) Delete(key string) error {
 func (this *Engine) Status() {
 	fmt.Println(this.memTable.Show())
 	this.ssTable.GetSelf().Status()
+}
+
+func (this *Engine) CleanAll() {
+	this.ssTable.CleanAll()
 }

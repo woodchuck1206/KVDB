@@ -161,6 +161,10 @@ func (this *SSTable) Status() {
 	}
 }
 
+func (this *SSTable) CleanAll() {
+	CleanAll(this)
+}
+
 func NewSsTable(r int) *SSTable {
 	return &SSTable{
 		r:      r,

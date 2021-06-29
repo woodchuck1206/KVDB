@@ -73,10 +73,12 @@ func TestPutGetDelete(t *testing.T) {
 			if err == vars.GET_FAIL_ERROR && ok {
 				e.Status()
 				t.Errorf("%vth run! %v should exist in DB! EngineValue: %v MapValue: %v\n", i, key, valueFromEngine, valueFromMap)
+				t.FailNow()
 			}
 			if err != vars.GET_FAIL_ERROR && valueFromEngine != valueFromMap {
 				e.Status()
 				t.Errorf("%v value does not match\nDB: %v\nMAP: %v\n", key, valueFromEngine, valueFromMap)
+				t.FailNow()
 			}
 			break
 		case 2:
@@ -86,6 +88,9 @@ func TestPutGetDelete(t *testing.T) {
 			break
 		}
 
+	}
+	if !t.Failed() {
+		e.CleanAll()
 	}
 }
 
