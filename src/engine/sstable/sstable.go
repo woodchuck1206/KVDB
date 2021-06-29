@@ -156,7 +156,11 @@ func (this *SSTable) Status() {
 		for _, b := range level.Blocks {
 			fmt.Printf("%v, ", b.FileName)
 		}
-
+		fmt.Printf("]\n")
+		fmt.Printf("Index %v [", idx)
+		for _, b := range level.Blocks {
+			fmt.Printf("%v, ", b.Index)
+		}
 		fmt.Printf("]\n")
 	}
 }

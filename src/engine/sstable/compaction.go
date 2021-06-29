@@ -179,7 +179,6 @@ func MultiMerge(level *Level, l int) Block {
 		}
 
 		byteKV := util.KeyValueToByteSlice(kvToAdd)
-		mergeSize += len(byteKV)
 
 		if offsetBefore == -1 || mergeSize-offsetBefore >= indexTerm {
 			mergeSparseIndex = append(mergeSparseIndex, vars.SparseIndex{
@@ -189,6 +188,9 @@ func MultiMerge(level *Level, l int) Block {
 
 			offsetBefore = mergeSize
 		}
+
+		mergeSize += len(byteKV)
+
 		writeFD.Write(byteKV)
 	}
 
