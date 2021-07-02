@@ -3,6 +3,7 @@ package sstable
 import (
 	"fmt"
 
+	"github.com/bits-and-blooms/bloom/v3"
 	"github.com/woodchuckchoi/KVDB/src/engine/util"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
 )
@@ -19,6 +20,7 @@ type Level struct {
 type Block struct {
 	FileName string
 	Index    []vars.SparseIndex
+	Bloom    bloom.BloomFilter // bloom filter added
 	Size     int
 }
 
