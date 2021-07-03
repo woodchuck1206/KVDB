@@ -20,11 +20,12 @@ type Level struct {
 type Block struct {
 	FileName string
 	Index    []vars.SparseIndex
-	Bloom    bloom.BloomFilter // bloom filter added
+	Bloom    *bloom.BloomFilter // bloom filter added
 	Size     int
 }
 
 func (this *Block) Get(key string) (string, error) {
+
 	from, till := 0, -1
 
 	// get range from sparseIndex
@@ -47,7 +48,10 @@ func (this *Block) Get(key string) (string, error) {
 }
 
 func (this *Block) has(key string) bool {
-	return key >= this.Index[0].Key && key <= this.Index[len(this.Index)-1].Key
+	if this.Bloom.Test([]byte(key)) && key >= this.Index[0].Key && key <= this.Index[len(this.Index)-1].Key {
+		return true
+	}
+	return false
 }
 
 func BinarySearchKeyValuePairs(binTree []vars.KeyValue, key string) (string, error) {
@@ -82,16 +86,16 @@ func (this *SSTable) Get(key string) (string, error) {
 	return "", vars.GET_FAIL_ERROR
 }
 
+func (this *SSTable) RValue() int {
+	return this.r
+}
+
 func (this *SSTable) GetSelf() *SSTable {
 	return this
 }
 
 func (this *SSTable) L0Merge(keyValuePairs []vars.KeyValue) (int, error) {
-	// order := len(this.levels[0].blocks)
-	// fileName := util.GenerateFileName(0, order)
 	return this.Merge(0, keyValuePairs)
-	// util.WriteKeyValuePairs()
-	// return nil
 }
 
 func (this *SSTable) Cleanse(level int) {
@@ -133,10 +137,14 @@ func (this *SSTable) Merge(level int, keyValuePairs []vars.KeyValue) (int, error
 		return -1, vars.FILE_CREATE_ERROR
 	}
 
+	bloomFilter := getBloomFilterOfLevel(this.r, level)
+	bloomFilter = activateBloomFilter(bloomFilter, keyValuePairs)
+
 	newBlock := Block{
 		FileName: fullPath,
 		Index:    sparseIndex,
 		Size:     len(byteSlice),
+		Bloom:    bloomFilter,
 	}
 
 	this.levels[level].Blocks = append([]*Block{&newBlock}, this.levels[level].Blocks...)
@@ -184,6 +192,21 @@ func CleanAll(ssTable *SSTable) {
 			util.RemoveFile(block.FileName)
 		}
 	}
+}
+
+func getBloomFilterOfLevel(r, level int) *bloom.BloomFilter {
+	bloomSize := 2000
+	for i := 0; i < level; i++ {
+		bloomSize *= r
+	}
+	return bloom.NewWithEstimates(uint(bloomSize), 0.01)
+}
+
+func activateBloomFilter(bloomFilter *bloom.BloomFilter, kvs []vars.KeyValue) *bloom.BloomFilter {
+	for _, kv := range kvs {
+		bloomFilter.Add([]byte(kv.Key))
+	}
+	return bloomFilter
 }
 
 // tiering

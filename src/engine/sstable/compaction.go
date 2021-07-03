@@ -14,6 +14,7 @@ type Compactor struct {
 
 type MergeSignal struct {
 	Level    int
+	R        int
 	LevelRef *SSTable
 	Returner chan<- Block
 }
@@ -90,7 +91,7 @@ func (this Compactor) Run() {
 		for {
 			select {
 			case mergeSignal := <-this.Receiver:
-				mergedBlock := MultiMerge(mergeSignal.LevelRef.levels[mergeSignal.Level], mergeSignal.Level)
+				mergedBlock := MultiMerge(mergeSignal.LevelRef.levels[mergeSignal.Level], mergeSignal.Level, mergeSignal.R)
 				mergeSignal.Returner <- mergedBlock
 				close(mergeSignal.Returner)
 			}
@@ -102,12 +103,13 @@ func (this Compactor) Receive(mergeSignal MergeSignal) {
 	this.Receiver <- mergeSignal
 }
 
-func MultiMerge(level *Level, l int) Block {
+func MultiMerge(level *Level, l, r int) Block {
 	mergeUnits := []MergeUnit{}
 	mergeSparseIndex := []vars.SparseIndex{}
 	offsetBefore := -1
 	mergeSize := 0
 	indexTerm := 1024
+	bloomFilter := getBloomFilterOfLevel(r, l)
 
 	for _, block := range level.Blocks {
 		file, err := os.Open(block.FileName)
@@ -178,6 +180,7 @@ func MultiMerge(level *Level, l int) Block {
 			}
 		}
 
+		bloomFilter.Add([]byte(kvToAdd.Key))
 		byteKV := util.KeyValueToByteSlice(kvToAdd)
 
 		if offsetBefore == -1 || mergeSize-offsetBefore >= indexTerm {
@@ -206,6 +209,7 @@ func MultiMerge(level *Level, l int) Block {
 		FileName: fullPath,
 		Index:    mergeSparseIndex,
 		Size:     mergeSize,
+		Bloom:    bloomFilter,
 	}
 }
 

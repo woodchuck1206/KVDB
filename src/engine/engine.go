@@ -45,6 +45,7 @@ func (this *Engine) Compact(level int) sstable.Block {
 	mergedBlockReceiver := make(chan sstable.Block)
 	mergeSignal := sstable.MergeSignal{
 		Level:    level,
+		R:        this.ssTable.GetSelf().RValue(),
 		LevelRef: this.ssTable.GetSelf(),
 		Returner: mergedBlockReceiver,
 	}

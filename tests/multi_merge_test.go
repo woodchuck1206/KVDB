@@ -79,7 +79,7 @@ func TestCompaction(t *testing.T) {
 		t.Logf("%v\n", testLevel.Blocks[i].FileName)
 	}
 
-	mergedBlock := sstable.MultiMerge(&testLevel, 1)
+	mergedBlock := sstable.MultiMerge(&testLevel, 1, 3)
 	defer os.Remove(mergedBlock.FileName)
 	mergedFile, _ := os.Open(mergedBlock.FileName)
 	bytes, _ := ioutil.ReadAll(mergedFile)
