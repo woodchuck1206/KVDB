@@ -69,7 +69,7 @@ func put(args []string) {
 		fmt.Println("USAGE ERROR!")
 		return
 	}
-	resp, err := http.Post(PUT_URL, "application/json")
+	// resp, err := http.Post(PUT_URL, "application/json")
 }
 
 func del(args []string) {
@@ -78,7 +78,7 @@ func del(args []string) {
 		return
 	}
 
-	resp, err := http.NewRequest(http.MethodDelete, DEL_URL+args[0])
+	// resp, err := http.NewRequest(http.MethodDelete, DEL_URL+args[0])
 }
 
 func main() {
