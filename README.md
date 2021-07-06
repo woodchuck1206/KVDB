@@ -10,8 +10,8 @@ LSM(Log-Structure Merge Tree) Style Key-Value database written in Go. Currently 
   )
 
   memtableSize := 1024 // in bytes
-	r := 3 // multiplier for the size of each tier's block
-	e := engine.NewEngine(memtableSize, r)
+  r := 3 // multiplier for the size of each tier's block // if tier 1 block size == 1024, tier 2 block size == 3072, tier 3 block size == 9216
+  e := engine.NewEngine(memtableSize, r)
 
   key := "this is a key"
   value := "and this is a value"
