@@ -1,7 +1,59 @@
-# To do
-각 Level을 Tier로 나누는 Tiering 방식을 implement하려고 했지만, 비어있는 SSTable level을 어떻게 tier별로 나눌것인가라는 문제가 남아있다.
-Level이 threshold에 도달했을때, 이 level은 다음 level의 각 tier에 merge되는 것이 tiering 방식인데, 그렇다면 다음 단계를 키의 range로 미리 tier를 나눠놓아야하는가, 아니면 동적으로 tier의 크기를 조절하는 기능을 넣어야하는가?
+# Go KV-DB (In Progress)
+LSM(Log-Structure Merge Tree) Style Key-Value database written in Go. Currently only supports tiering compaction.
 
-## SSTable
-sparseIndex를 메모리에 유지한다.\
-Get 요청이 들어오면 해당 인덱스만큼의 사이즈만 파일에서 불러와 메모리에 탑재한 후, binarySearch로 검색한다. (fseek)
+# How To
+
+* Library
+```go
+  import (
+    "github.com/woodchuckchoi/KVDB/src/engine"
+  )
+
+  memtableSize := 1024 // in bytes
+	r := 3 // multiplier for the size of each tier's block
+	e := engine.NewEngine(memtableSize, r)
+
+  key := "this is a key"
+  value := "and this is a value"
+
+  err := e.Put(key, value)
+  if err != nil {
+    // ...
+  }
+
+  got, err := e.Get(key)
+  if err != nil || value != got {
+    // ...
+  }
+
+  err = e.Delete(key)
+  if err != nil {
+    // ...
+  }
+
+  got, err = e.Get(key)
+  if err == nil || got == value {
+    // ...
+  }
+
+  e.Status() // print status in stdout
+  e.CleanAll() // remove all SSTable blocks
+```
+
+* Server
+```bash
+  go build # or install and run the binary
+
+  curl -XPOST localhost:7777/put -d 'key=hello' -d 'value=world'
+
+  curl localhost:7777/get/hello
+  # {"key":"hello","value":"world","error":""}
+
+  curl -XDELETE localhost:7777/del/hello
+
+  curl localhost:7777/get/hello
+  # {"key":"","value":"","error":"GET FAIL ERROR"}
+```
+
+# Caution
+DB stores SStable blocks in /tmp/gokvdb at the moment. Will take out all the carved-in-stone variables later.
