@@ -44,3 +44,23 @@ func ParseConfig(configFileAddr string) Config {
 	}
 	return config
 }
+
+func (this Config) GetMemtableSize() int {
+	return megabyteToByte(this.EConfig.MemtableSize)
+}
+
+func (this Config) GetSstableSize() int {
+	return megabyteToByte(this.EConfig.SstableSize)
+}
+
+func (this Config) GetRValue() int {
+	return this.EConfig.RValue
+}
+
+func (this Config) GetPort() int {
+	return this.SConfig.Port
+}
+
+func megabyteToByte(mb int) int {
+	return mb << 20
+}

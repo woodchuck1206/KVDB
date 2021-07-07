@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 
+	"github.com/woodchuckchoi/KVDB/src/config"
 	"github.com/woodchuckchoi/KVDB/src/engine/memtable"
 	"github.com/woodchuckchoi/KVDB/src/engine/sstable"
 	"github.com/woodchuckchoi/KVDB/src/engine/vars"
@@ -33,7 +34,15 @@ type SStable interface {
 	CleanAll()
 }
 
-func NewEngine(memTableThresholdSize, r int) *Engine {
+func NewEngineWithConfig(config config.Config) *Engine {
+	return &Engine{
+		memTable:  memtable.NewMemtable(config.GetMemtableSize()),
+		ssTable:   sstable.NewSsTable(config.GetRValue()), // needs to modify
+		compactor: sstable.NewCompactor(0),
+	}
+}
+
+func NewEngineWithValues(memTableThresholdSize, r int) *Engine {
 	return &Engine{
 		memTable:  memtable.NewMemtable(memTableThresholdSize),
 		ssTable:   sstable.NewSsTable(r),

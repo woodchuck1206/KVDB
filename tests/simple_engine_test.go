@@ -9,7 +9,7 @@ import (
 func TestSimple(t *testing.T) {
 	memtableSize := 1024
 	r := 3
-	m := engine.NewEngine(memtableSize, r)
+	m := engine.NewEngineWithValues(memtableSize, r)
 
 	err := m.Put("cya", "rzqfwkrzfpembscyugcx")
 	if err != nil {

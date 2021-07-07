@@ -9,7 +9,7 @@ import (
 
 func main() {
 	c := config.ParseConfig("")
-	engine := engine.NewEngine(c)
+	engine := engine.NewEngineWithConfig(c)
 	server := controller.Init(engine)
 	server.Run()
 }

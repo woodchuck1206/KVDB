@@ -35,7 +35,7 @@ func getRandomAlphabet() byte {
 func TestPutGetDelete(t *testing.T) {
 	memtableSize := 1024
 	r := 3
-	e := engine.NewEngine(memtableSize, r)
+	e := engine.NewEngineWithValues(memtableSize, r)
 
 	seed := time.Now().Nanosecond()
 	rand.Seed(int64(seed))
