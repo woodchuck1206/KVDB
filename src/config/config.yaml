@@ -1,0 +1,8 @@
+engine:
+  memtableSize: 4
+  sstableBaseSize: 4
+  rValue: 3
+  # compaction: tier
+server:
+  port: 7777
+  
